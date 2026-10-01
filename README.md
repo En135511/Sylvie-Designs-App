@@ -81,6 +81,10 @@ npm test
 
 ### Previewing without an Android phone
 
+> Not seeing recent changes? Run `git pull`, then `npm install --legacy-peer-deps`, then
+> `npm run preview:web`. This builds a fresh copy and serves it, so no old cache is involved.
+> Settings shows the app version at the bottom: it should read **1.1.0** or higher.
+
 ```bash
 npm run web          # opens http://localhost:8081 in your browser
 ```
