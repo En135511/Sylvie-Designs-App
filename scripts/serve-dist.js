@@ -1,4 +1,3 @@
-/* eslint-env node */
 // Serves the static web export (./dist) with the headers the in-browser SQLite needs.
 // Usage: npm run preview:web
 const http = require('http');
