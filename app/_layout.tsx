@@ -1,8 +1,9 @@
-import { Stack } from 'expo-router';
+import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { Suspense } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, Text, View } from 'react-native';
+import { Button } from '../src/components/ui';
 import { migrate } from '../src/db/migrations';
 import { FeatureFlagsProvider } from '../src/features/flags/FeatureFlagsProvider';
 import { colors } from '../src/theme';
@@ -13,6 +14,32 @@ function Loading() {
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
       <ActivityIndicator size="large" color={colors.primary} />
+    </View>
+  );
+}
+
+/** Shown if the app crashes while starting, e.g. the database could not be opened. */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const dbBusy = /createSyncAccessHandle|Access Handle/i.test(error.message);
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: 'center',
+        padding: 24,
+        gap: 16,
+        backgroundColor: colors.background,
+      }}
+    >
+      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.text }}>
+        Something went wrong
+      </Text>
+      <Text style={{ fontSize: 16, color: colors.text }}>
+        {dbBusy && Platform.OS === 'web'
+          ? 'The app is already open in another browser tab or window. Close the other one, then try again.'
+          : error.message}
+      </Text>
+      <Button title="Try again" onPress={retry} />
     </View>
   );
 }
