@@ -7,6 +7,7 @@ interface ClientRow {
   name: string;
   phone: string;
   notes: string;
+  class_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -16,19 +17,31 @@ const toClient = (r: ClientRow): Client => ({
   name: r.name,
   phone: r.phone,
   notes: r.notes,
+  classId: r.class_id,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
 });
 
 export type ClientInput = Pick<Client, 'name' | 'phone' | 'notes'>;
 
-export async function listClients(db: SQLiteDatabase, search = ''): Promise<Client[]> {
+/**
+ * Lists clients by name or phone. With `excludeStudents`, school students are hidden unless the
+ * user is searching, so a class of hundreds does not bury the tailor's ordinary clients.
+ */
+export async function listClients(
+  db: SQLiteDatabase,
+  search = '',
+  excludeStudents = false,
+): Promise<Client[]> {
   const term = `%${search.trim().replace(/[%_\\]/g, '\\$&')}%`;
   const rows = await db.getAllAsync<ClientRow>(
     `SELECT * FROM clients
-     WHERE name LIKE ?1 ESCAPE '\\' OR phone LIKE ?1 ESCAPE '\\'
+     WHERE (name LIKE ?1 ESCAPE '\\' OR phone LIKE ?1 ESCAPE '\\')
+       AND (?2 = 0 OR class_id IS NULL OR ?3 != '')
      ORDER BY name COLLATE NOCASE`,
     term,
+    excludeStudents ? 1 : 0,
+    search.trim(),
   );
   return rows.map(toClient);
 }

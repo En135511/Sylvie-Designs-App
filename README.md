@@ -11,6 +11,11 @@ due dates, and keep payment balances. Built with Expo (React Native) and TypeScr
 - **Orders** – garment, details, due date, price, deposit, progress status
   (New → Cutting → Sewing → Fitting → Ready → Delivered), "ready" WhatsApp message.
 - **Today dashboard** – overdue and upcoming orders, money still to collect.
+- **Schools & classes** (switch: "Schools & classes") – schools contain classes, classes contain
+  students. Paste a whole class list to add every student at once, measure student after student
+  with "Save & next student", see "12 of 40 measured" per garment, search students, and export a
+  class sheet as CSV (opens in Excel / Google Sheets). Students are hidden from the main Clients
+  list unless searched for, so hundreds of them don't bury ordinary clients.
 - **Backup** – export all data to a JSON file (share via WhatsApp/Drive/email) and restore it.
 
 All data is stored locally in SQLite. There is no server and no account.

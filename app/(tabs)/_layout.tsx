@@ -11,6 +11,7 @@ const icon = (glyph: string) =>
 export default function TabsLayout() {
   const showToday = useFlag('today');
   const showOrders = useFlag('orders');
+  const showSchools = useFlag('schools');
   return (
     <Tabs
       screenOptions={{
@@ -24,6 +25,10 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Clients', tabBarIcon: icon('👤') }} />
+      <Tabs.Screen
+        name="schools"
+        options={{ title: 'Schools', tabBarIcon: icon('🏫'), href: showSchools ? undefined : null }}
+      />
       <Tabs.Screen
         name="today"
         options={{ title: 'Today', tabBarIcon: icon('📋'), href: showToday ? undefined : null }}

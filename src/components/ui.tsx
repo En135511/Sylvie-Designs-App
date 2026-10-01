@@ -100,6 +100,7 @@ export function Button({
 export function Field({
   label,
   error,
+  style,
   ...input
 }: { label: string; error?: string | undefined } & TextInputProps) {
   return (
@@ -112,6 +113,7 @@ export function Field({
           styles.input,
           input.multiline && styles.inputMultiline,
           error ? { borderColor: colors.danger } : null,
+          style,
         ]}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}

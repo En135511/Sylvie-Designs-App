@@ -7,6 +7,7 @@ const client: Client = {
   name: 'Amina',
   phone: '0700',
   notes: '',
+  classId: 'k1',
   createdAt: 't',
   updatedAt: 't',
 };
@@ -32,6 +33,8 @@ const order: Order = {
   updatedAt: 't',
 };
 const base = {
+  schools: [{ id: 's1', name: 'Hill School', notes: '', createdAt: 't' }],
+  classes: [{ id: 'k1', schoolId: 's1', name: 'Class 4B', createdAt: 't' }],
   settings: { unit: 'in' as const, currencySymbol: 'KSh ' },
   clients: [client],
   measurements: [measurement],
@@ -59,5 +62,25 @@ describe('backup format', () => {
     const bad = JSON.parse(serializeBackup(base));
     bad.orders[0].clientId = 'ghost';
     expect(() => parseBackup(JSON.stringify(bad))).toThrow(/missing client/);
+  });
+
+  it('rejects a student pointing at a missing class', () => {
+    const bad = JSON.parse(serializeBackup(base));
+    bad.clients[0].classId = 'ghost';
+    expect(() => parseBackup(JSON.stringify(bad))).toThrow(/missing class/);
+  });
+
+  it('still reads version 1 backups (no schools) and defaults classId to null', () => {
+    const v1 = {
+      version: 1,
+      exportedAt: 't',
+      settings: base.settings,
+      clients: [{ ...client, classId: undefined }],
+      measurements: [measurement],
+      orders: [order],
+    };
+    const parsed = parseBackup(JSON.stringify(v1));
+    expect(parsed.schools).toEqual([]);
+    expect(parsed.clients[0]?.classId).toBeNull();
   });
 });

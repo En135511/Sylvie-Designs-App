@@ -1,12 +1,15 @@
-import type { Client, Measurement, Order, Settings } from '../../domain/types';
+import type { Client, Measurement, Order, School, SchoolClass, Settings } from '../../domain/types';
 import { ORDER_STATUSES } from '../../domain/types';
 
-export const BACKUP_VERSION = 1;
+/** v2 added schools, classes and clients.classId. v1 backups are still accepted. */
+export const BACKUP_VERSION = 2;
 
 export interface BackupData {
   version: number;
   exportedAt: string;
   settings: Settings;
+  schools: School[];
+  classes: SchoolClass[];
   clients: Client[];
   measurements: Measurement[];
   orders: Order[];
@@ -46,14 +49,18 @@ export function parseBackup(json: string): BackupData {
   } catch {
     throw new Error('This file is not a valid backup (could not read it).');
   }
-  if (!isRecord(raw) || raw.version !== BACKUP_VERSION) {
+  if (!isRecord(raw) || (raw.version !== BACKUP_VERSION && raw.version !== 1)) {
     throw new Error('This backup was made by an unsupported version of the app.');
   }
 
+  const schools = raw.version === 1 ? [] : requireArray(raw.schools, 'schools');
+  const classes = raw.version === 1 ? [] : requireArray(raw.classes, 'classes');
   const clients = requireArray(raw.clients, 'clients');
   const measurements = requireArray(raw.measurements, 'measurements');
   const orders = requireArray(raw.orders, 'orders');
 
+  schools.forEach((s) => requireStrings(s, ['id', 'name', 'notes', 'createdAt'], 'a school'));
+  classes.forEach((c) => requireStrings(c, ['id', 'schoolId', 'name', 'createdAt'], 'a class'));
   clients.forEach((c) =>
     requireStrings(c, ['id', 'name', 'phone', 'notes', 'createdAt', 'updatedAt'], 'a client'),
   );
@@ -81,6 +88,15 @@ export function parseBackup(json: string): BackupData {
     }
   });
 
+  const schoolIds = new Set(schools.map((s) => s.id));
+  if (classes.some((c) => !schoolIds.has(c.schoolId as string))) {
+    throw new Error('Backup contains a class that belongs to a missing school.');
+  }
+  const classIds = new Set(classes.map((c) => c.id));
+  const normalizedClients = clients.map((c) => ({ ...c, classId: c.classId ?? null }));
+  if (normalizedClients.some((c) => c.classId !== null && !classIds.has(c.classId as string))) {
+    throw new Error('Backup contains a student that belongs to a missing class.');
+  }
   const clientIds = new Set(clients.map((c) => c.id));
   const orphan = [...measurements, ...orders].some((r) => !clientIds.has(r.clientId as string));
   if (orphan) throw new Error('Backup contains records that belong to a missing client.');
@@ -95,7 +111,9 @@ export function parseBackup(json: string): BackupData {
     version: BACKUP_VERSION,
     exportedAt: isString(raw.exportedAt) ? raw.exportedAt : '',
     settings,
-    clients: clients as unknown as Client[],
+    schools: schools as unknown as School[],
+    classes: classes as unknown as SchoolClass[],
+    clients: normalizedClients as unknown as Client[],
     measurements: measurements as unknown as Measurement[],
     orders: orders as unknown as Order[],
   };

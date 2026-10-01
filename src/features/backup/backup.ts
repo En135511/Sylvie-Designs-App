@@ -5,10 +5,10 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { listClients } from '../../db/repositories/clients';
 import { getSettings } from '../../db/repositories/settings';
 import { parseBackup, serializeBackup, type BackupData } from './format';
-import type { Measurement, Order } from '../../domain/types';
+import type { Measurement, Order, School, SchoolClass } from '../../domain/types';
 
 async function collect(db: SQLiteDatabase) {
-  const [clients, settings, measurementRows, orderRows] = await Promise.all([
+  const [clients, settings, measurementRows, orderRows, schoolRows, classRows] = await Promise.all([
     listClients(db),
     getSettings(db),
     db.getAllAsync<{
@@ -32,6 +32,12 @@ async function collect(db: SQLiteDatabase) {
       created_at: string;
       updated_at: string;
     }>('SELECT * FROM orders'),
+    db.getAllAsync<{ id: string; name: string; notes: string; created_at: string }>(
+      'SELECT * FROM schools',
+    ),
+    db.getAllAsync<{ id: string; school_id: string; name: string; created_at: string }>(
+      'SELECT * FROM classes',
+    ),
   ]);
 
   const measurements = measurementRows.map((r): Measurement => ({
@@ -55,7 +61,19 @@ async function collect(db: SQLiteDatabase) {
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   }));
-  return { clients, measurements, orders, settings };
+  const schools: School[] = schoolRows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    notes: r.notes,
+    createdAt: r.created_at,
+  }));
+  const classes: SchoolClass[] = classRows.map((r) => ({
+    id: r.id,
+    schoolId: r.school_id,
+    name: r.name,
+    createdAt: r.created_at,
+  }));
+  return { schools, classes, clients, measurements, orders, settings };
 }
 
 /** Writes a JSON backup to the cache and opens the Android share sheet. */
@@ -91,18 +109,39 @@ export async function pickBackup(): Promise<BackupData | null> {
 export async function restoreBackup(db: SQLiteDatabase, data: BackupData): Promise<void> {
   await db.withTransactionAsync(async () => {
     await db.runAsync('DELETE FROM orders');
+    await db.runAsync('DELETE FROM classes');
+    await db.runAsync('DELETE FROM schools');
     await db.runAsync('DELETE FROM measurements');
     await db.runAsync('DELETE FROM clients');
     // Feature switches are device configuration, not data: keep them across a restore.
     await db.runAsync("DELETE FROM settings WHERE key NOT LIKE 'flag:%'");
 
+    for (const s of data.schools) {
+      await db.runAsync(
+        'INSERT INTO schools (id, name, notes, created_at) VALUES (?, ?, ?, ?)',
+        s.id,
+        s.name,
+        s.notes,
+        s.createdAt,
+      );
+    }
+    for (const c of data.classes) {
+      await db.runAsync(
+        'INSERT INTO classes (id, school_id, name, created_at) VALUES (?, ?, ?, ?)',
+        c.id,
+        c.schoolId,
+        c.name,
+        c.createdAt,
+      );
+    }
     for (const c of data.clients) {
       await db.runAsync(
-        'INSERT INTO clients (id, name, phone, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO clients (id, name, phone, notes, class_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
         c.id,
         c.name,
         c.phone,
         c.notes,
+        c.classId,
         c.createdAt,
         c.updatedAt,
       );

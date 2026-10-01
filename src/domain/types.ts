@@ -24,8 +24,24 @@ export interface Client {
   name: string;
   phone: string;
   notes: string;
+  /** Set for school students; null for ordinary clients. */
+  classId: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface School {
+  id: string;
+  name: string;
+  notes: string;
+  createdAt: string;
+}
+
+export interface SchoolClass {
+  id: string;
+  schoolId: string;
+  name: string;
+  createdAt: string;
 }
 
 /** Measurement values are always stored in centimetres, keyed by field key. */

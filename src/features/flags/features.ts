@@ -16,6 +16,13 @@ export const FEATURES = [
     defaultOn: false,
   },
   {
+    key: 'schools',
+    label: 'Schools & classes',
+    description:
+      'Group students into schools and classes, measure whole classes quickly, export class sheets.',
+    defaultOn: false,
+  },
+  {
     key: 'today',
     label: 'Today dashboard',
     description: 'A tab showing overdue and upcoming orders and money still to collect.',

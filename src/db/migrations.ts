@@ -47,6 +47,26 @@ const MIGRATIONS: readonly string[] = [
     value TEXT NOT NULL
   );
   `,
+  // v2: schools, classes and school students (a student is a client with a class_id).
+  `
+  CREATE TABLE schools (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+  );
+
+  CREATE TABLE classes (
+    id TEXT PRIMARY KEY NOT NULL,
+    school_id TEXT NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX idx_classes_school ON classes(school_id);
+
+  ALTER TABLE clients ADD COLUMN class_id TEXT REFERENCES classes(id) ON DELETE CASCADE;
+  CREATE INDEX idx_clients_class ON clients(class_id);
+  `,
 ];
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {

@@ -37,6 +37,10 @@ export default function RootLayout() {
             <Stack.Screen name="measurement/form" options={{ title: 'Measurements' }} />
             <Stack.Screen name="order/[id]" options={{ title: 'Order' }} />
             <Stack.Screen name="order/form" options={{ title: 'Order' }} />
+            <Stack.Screen name="school/[id]" options={{ title: 'School' }} />
+            <Stack.Screen name="school/form" options={{ title: 'School' }} />
+            <Stack.Screen name="class/[id]" options={{ title: 'Class' }} />
+            <Stack.Screen name="class/add-students" options={{ title: 'Add students' }} />
             <Stack.Screen name="features" options={{ title: 'Feature switches' }} />
           </Stack>
         </FeatureFlagsProvider>

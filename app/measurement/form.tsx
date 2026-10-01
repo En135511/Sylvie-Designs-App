@@ -19,6 +19,8 @@ import {
   latestMeasurement,
   updateMeasurement,
 } from '../../src/db/repositories/measurements';
+import { getClient } from '../../src/db/repositories/clients';
+import { nextUnmeasuredStudent } from '../../src/db/repositories/schools';
 import { getSettings } from '../../src/db/repositories/settings';
 import { GARMENTS, customKey, fieldLabel, fieldsForGarment } from '../../src/domain/garments';
 import type { MeasurementValues, Unit } from '../../src/domain/types';
@@ -31,13 +33,25 @@ const toInputs = (values: MeasurementValues, unit: Unit): Record<string, string>
 
 export default function MeasurementFormScreen() {
   const db = useSQLiteContext();
-  const { clientId, id } = useLocalSearchParams<{ clientId: string; id?: string }>();
+  const {
+    clientId,
+    id,
+    classId,
+    garment: garmentParam,
+  } = useLocalSearchParams<{
+    clientId: string;
+    id?: string;
+    /** Set when measuring a school class: enables "Save & next student". */
+    classId?: string;
+    garment?: string;
+  }>();
 
   const advanced = useFlag('advancedMeasurements');
   const allowCustom = useFlag('customMeasurements');
   const [ready, setReady] = useState(false);
   const [unit, setUnit] = useState<Unit>('cm');
-  const [garment, setGarment] = useState('shirt');
+  const [garment, setGarment] = useState(garmentParam ?? 'shirt');
+  const [studentName, setStudentName] = useState('');
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string>();
@@ -54,7 +68,9 @@ export default function MeasurementFormScreen() {
     (async () => {
       const settings = await getSettings(db);
       const existing = id ? await getMeasurement(db, id) : null;
+      const client = classId ? await getClient(db, clientId) : null;
       if (cancelled) return;
+      setStudentName(client?.name ?? '');
       setUnit(settings.unit);
       if (existing) {
         setGarment(existing.garment);
@@ -67,7 +83,7 @@ export default function MeasurementFormScreen() {
     return () => {
       cancelled = true;
     };
-  }, [db, id]);
+  }, [db, id, classId, clientId]);
 
   // New record: offer the client's previous numbers for the chosen garment as a starting point.
   useEffect(() => {
@@ -121,6 +137,17 @@ export default function MeasurementFormScreen() {
     try {
       if (id) await updateMeasurement(db, id, { garment, values, notes, takenAt });
       else await createMeasurement(db, { clientId, garment, values, notes, takenAt });
+
+      const next =
+        classId && !id ? await nextUnmeasuredStudent(db, classId, garment, clientId) : null;
+      if (next) {
+        router.replace({
+          pathname: '/measurement/form',
+          params: { clientId: next.id, classId, garment },
+        });
+        return;
+      }
+      if (classId && !id) Alert.alert('All done', 'Every student in this class has been measured.');
       router.back();
     } catch (e) {
       Alert.alert('Could not save', e instanceof Error ? e.message : String(e));
@@ -151,18 +178,24 @@ export default function MeasurementFormScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: id ? 'Edit measurements' : 'New measurements' }} />
-      <SectionHeader title="Garment" />
-      <ChipRow>
-        {GARMENTS.map((g) => (
-          <Chip
-            key={g.key}
-            label={g.label}
-            selected={garment === g.key}
-            onPress={() => setGarment(g.key)}
-          />
-        ))}
-      </ChipRow>
+      <Stack.Screen
+        options={{ title: studentName || (id ? 'Edit measurements' : 'New measurements') }}
+      />
+      {classId ? null : (
+        <>
+          <SectionHeader title="Garment" />
+          <ChipRow>
+            {GARMENTS.map((g) => (
+              <Chip
+                key={g.key}
+                label={g.label}
+                selected={garment === g.key}
+                onPress={() => setGarment(g.key)}
+              />
+            ))}
+          </ChipRow>
+        </>
+      )}
 
       <DateField label="Date taken" value={takenAt} onChange={setTakenAt} />
 
@@ -212,7 +245,11 @@ export default function MeasurementFormScreen() {
         placeholder="Posture, fit preferences…"
       />
       {formError ? <Text style={{ color: '#B3261E' }}>{formError}</Text> : null}
-      <Button title="Save" onPress={save} loading={saving} />
+      <Button
+        title={classId && !id ? 'Save & next student' : 'Save'}
+        onPress={save}
+        loading={saving}
+      />
       {id ? <Button title="Delete" variant="danger" onPress={confirmDelete} /> : null}
     </Screen>
   );

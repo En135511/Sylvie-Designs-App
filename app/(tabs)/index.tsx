@@ -4,15 +4,17 @@ import { Text } from 'react-native';
 import { Button, Card, EmptyState, Field, Screen, textStyles } from '../../src/components/ui';
 import { listClients } from '../../src/db/repositories/clients';
 import { useFocusQuery } from '../../src/hooks/useFocusQuery';
+import { useFlag } from '../../src/features/flags/FeatureFlagsProvider';
 import { colors } from '../../src/theme';
 
 export default function ClientsScreen() {
   const [search, setSearch] = useState('');
+  const hideStudents = useFlag('schools');
   const {
     data: clients,
     loading,
     error,
-  } = useFocusQuery((db) => listClients(db, search), [search]);
+  } = useFocusQuery((db) => listClients(db, search, hideStudents), [search, hideStudents]);
 
   return (
     <Screen>
