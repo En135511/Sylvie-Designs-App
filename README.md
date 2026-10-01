@@ -8,6 +8,10 @@ due dates, and keep payment balances. Built with Expo (React Native) and TypeScr
 - **Clients** – add, search, edit, delete; one-tap call and WhatsApp.
 - **Measurements** – garment templates (shirt, trousers, dress, skirt, suit, other), dated history,
   pre-filled from the client's previous record, cm/inch toggle (stored precisely in cm).
+- **Choose measurements** (switch: "Choose measurements") – Settings gets a list of ~35
+  measurements grouped by body area, each with a switch (plus "Basic set" / "Select all"). Only
+  the switched-on ones appear on the measurement form, limited to those that suit the garment;
+  "Other" shows all of them. Saved values are never deleted when a measurement is switched off.
 - **Orders** – garment, details, due date, price, deposit, progress status
   (New → Cutting → Sewing → Fitting → Ready → Delivered), "ready" WhatsApp message.
 - **Today dashboard** – overdue and upcoming orders, money still to collect.

@@ -30,6 +30,7 @@ export default function SettingsScreen() {
   const showUnit = useFlag('unitToggle');
   const showPayments = useFlag('payments');
   const showBackup = useFlag('backup');
+  const showPicker = useFlag('measurementPicker');
   const taps = useRef({ count: 0, last: 0 });
 
   // Tapping the version 7 times in quick succession opens the hidden feature switches.
@@ -89,6 +90,17 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
+      {showPicker ? (
+        <>
+          <SectionHeader title="Measurements" />
+          <Button
+            title="Choose which measurements to show"
+            variant="secondary"
+            onPress={() => router.push('/measurements-setup')}
+          />
+        </>
+      ) : null}
+
       {showUnit ? (
         <>
           <SectionHeader title="Measurement unit" />

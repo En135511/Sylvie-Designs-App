@@ -35,9 +35,10 @@ export const FEATURES = [
     defaultOn: false,
   },
   {
-    key: 'advancedMeasurements',
-    label: 'Advanced measurements',
-    description: 'The full list of tailoring measurements (bust point, armhole, calf, …).',
+    key: 'measurementPicker',
+    label: 'Choose measurements',
+    description:
+      'Settings gets a list with a switch for each of about 35 measurements, so she picks which ones appear.',
     defaultOn: false,
   },
   {

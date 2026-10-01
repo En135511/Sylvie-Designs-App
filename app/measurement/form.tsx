@@ -21,7 +21,7 @@ import {
 } from '../../src/db/repositories/measurements';
 import { getClient } from '../../src/db/repositories/clients';
 import { nextUnmeasuredStudent } from '../../src/db/repositories/schools';
-import { getSettings } from '../../src/db/repositories/settings';
+import { getEnabledFields, getSettings } from '../../src/db/repositories/settings';
 import { GARMENTS, customKey, fieldLabel, fieldsForGarment } from '../../src/domain/garments';
 import type { MeasurementValues, Unit } from '../../src/domain/types';
 import { useFlag } from '../../src/features/flags/FeatureFlagsProvider';
@@ -46,7 +46,7 @@ export default function MeasurementFormScreen() {
     garment?: string;
   }>();
 
-  const advanced = useFlag('advancedMeasurements');
+  const [enabledFields, setEnabledFields] = useState<ReadonlySet<string>>(new Set());
   const allowCustom = useFlag('customMeasurements');
   const [ready, setReady] = useState(false);
   const [unit, setUnit] = useState<Unit>('cm');
@@ -67,11 +67,13 @@ export default function MeasurementFormScreen() {
     let cancelled = false;
     (async () => {
       const settings = await getSettings(db);
+      const enabled = await getEnabledFields(db);
       const existing = id ? await getMeasurement(db, id) : null;
       const client = classId ? await getClient(db, clientId) : null;
       if (cancelled) return;
       setStudentName(client?.name ?? '');
       setUnit(settings.unit);
+      setEnabledFields(enabled);
       if (existing) {
         setGarment(existing.garment);
         setInputs(toInputs(existing.values, settings.unit));
@@ -100,7 +102,7 @@ export default function MeasurementFormScreen() {
   }, [db, clientId, garment, ready, id, unit]);
 
   const fields = useMemo(() => {
-    const base = fieldsForGarment(garment, advanced);
+    const base = fieldsForGarment(garment, enabledFields);
     const known = new Set(base.map((f) => f.key));
     const extraKeys = new Set([
       ...Object.keys(inputs).filter((k) => !known.has(k) && inputs[k]?.trim()),
@@ -108,7 +110,7 @@ export default function MeasurementFormScreen() {
     ]);
     const extras = [...extraKeys].map((k) => ({ key: k, label: fieldLabel(k) }));
     return [...base, ...extras];
-  }, [garment, advanced, inputs, customKeys]);
+  }, [garment, enabledFields, inputs, customKeys]);
 
   const addCustom = () => {
     const name = customName.trim();
@@ -203,6 +205,11 @@ export default function MeasurementFormScreen() {
       {prefilled && !id ? (
         <Text style={textStyles.muted}>
           Pre-filled from the last time. Update what has changed.
+        </Text>
+      ) : null}
+      {fields.length === 0 ? (
+        <Text style={textStyles.muted}>
+          No measurements are switched on. Turn some on in Settings, Choose measurements.
         </Text>
       ) : null}
       {fields.map((f) => (

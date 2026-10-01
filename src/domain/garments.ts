@@ -76,6 +76,8 @@ export const GARMENTS: readonly Garment[] = [
       'wrist',
       'backWidth',
       'shirtLength',
+      'elbow',
+      'frontChestWidth',
     ],
   },
   {
@@ -112,6 +114,7 @@ export const GARMENTS: readonly Garment[] = [
       'sleeve',
       'napeToWaist',
       'backLength',
+      'frontLength',
       'waistToHip',
       'dressLength',
       'waistToFloor',
@@ -137,7 +140,10 @@ export const GARMENTS: readonly Garment[] = [
       'sleeve',
       'shortSleeve',
       'bicep',
+      'elbow',
+      'frontChestWidth',
       'napeToWaist',
+      'frontLength',
       'shirtLength',
     ],
   },
@@ -203,11 +209,53 @@ export const CORE_FIELD_KEYS: ReadonlySet<string> = new Set([
   'outseam',
 ]);
 
-export function fieldsForGarment(key: string, advanced = true): MeasurementField[] {
+/** Measurements grouped by body area, used by the "Choose measurements" screen. */
+export const FIELD_GROUPS: readonly { title: string; keys: readonly string[] }[] = [
+  { title: 'General', keys: ['height'] },
+  {
+    title: 'Upper body',
+    keys: [
+      'neck',
+      'shoulder',
+      'chest',
+      'underbust',
+      'bustPoint',
+      'shoulderToBust',
+      'frontChestWidth',
+      'backWidth',
+      'armhole',
+      'waist',
+      'highHip',
+      'hip',
+      'napeToWaist',
+      'backLength',
+      'frontLength',
+      'waistToHip',
+    ],
+  },
+  { title: 'Arms', keys: ['sleeve', 'shortSleeve', 'bicep', 'elbow', 'wrist'] },
+  {
+    title: 'Lengths',
+    keys: ['shirtLength', 'jacketLength', 'dressLength', 'skirtLength', 'waistToFloor'],
+  },
+  {
+    title: 'Lower body',
+    keys: ['rise', 'crotchLength', 'thigh', 'knee', 'calf', 'ankle', 'inseam', 'outseam'],
+  },
+];
+
+/** The essential set shown until the tailor chooses her own. */
+export const DEFAULT_ENABLED_FIELDS: readonly string[] = [...CORE_FIELD_KEYS];
+
+/**
+ * Measurements to show for a garment: the garment's template limited to the ones the tailor has
+ * switched on. "Other" shows every switched-on measurement.
+ */
+export function fieldsForGarment(key: string, enabled: ReadonlySet<string>): MeasurementField[] {
   const garment = GARMENTS.find((g) => g.key === key) ?? GARMENTS[GARMENTS.length - 1]!;
-  return garment.fields.flatMap((k) => {
+  const keys = garment.key === 'custom' ? MEASUREMENT_FIELDS.map((f) => f.key) : garment.fields;
+  return keys.flatMap((k) => {
     const field = FIELD_BY_KEY.get(k);
-    if (!field || (!advanced && !CORE_FIELD_KEYS.has(k))) return [];
-    return [field];
+    return field && enabled.has(k) ? [field] : [];
   });
 }
