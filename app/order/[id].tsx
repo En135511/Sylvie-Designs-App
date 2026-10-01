@@ -17,6 +17,7 @@ import { getClient } from '../../src/db/repositories/clients';
 import { deleteOrder, getOrder, setOrderStatus } from '../../src/db/repositories/orders';
 import { garmentLabel } from '../../src/domain/garments';
 import { ORDER_STATUSES, STATUS_LABELS, type OrderStatus } from '../../src/domain/types';
+import { useFlag } from '../../src/features/flags/FeatureFlagsProvider';
 import { useFocusQuery } from '../../src/hooks/useFocusQuery';
 import { useSettings } from '../../src/hooks/useSettings';
 import { colors } from '../../src/theme';
@@ -28,6 +29,8 @@ export default function OrderDetailScreen() {
   const db = useSQLiteContext();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { currencySymbol } = useSettings();
+  const showPayments = useFlag('payments');
+  const showContact = useFlag('contact');
   const [version, setVersion] = useState(0);
   const { data, loading } = useFocusQuery(
     async (d) => {
@@ -104,15 +107,21 @@ export default function OrderDetailScreen() {
         </Text>
       </Card>
 
-      <Card>
-        <Text style={textStyles.body}>Price: {formatMoney(order.priceMinor, currencySymbol)}</Text>
-        <Text style={textStyles.body}>
-          Deposit: {formatMoney(order.depositMinor, currencySymbol)}
-        </Text>
-        <Text style={[textStyles.title, { color: balance > 0 ? colors.warning : colors.success }]}>
-          {balance > 0 ? `Balance due: ${formatMoney(balance, currencySymbol)}` : 'Fully paid'}
-        </Text>
-      </Card>
+      {showPayments ? (
+        <Card>
+          <Text style={textStyles.body}>
+            Price: {formatMoney(order.priceMinor, currencySymbol)}
+          </Text>
+          <Text style={textStyles.body}>
+            Deposit: {formatMoney(order.depositMinor, currencySymbol)}
+          </Text>
+          <Text
+            style={[textStyles.title, { color: balance > 0 ? colors.warning : colors.success }]}
+          >
+            {balance > 0 ? `Balance due: ${formatMoney(balance, currencySymbol)}` : 'Fully paid'}
+          </Text>
+        </Card>
+      ) : null}
 
       <SectionHeader title="Progress" />
       <ChipRow>
@@ -126,7 +135,7 @@ export default function OrderDetailScreen() {
         ))}
       </ChipRow>
 
-      {order.status === 'ready' ? (
+      {showContact && order.status === 'ready' ? (
         <Button title="Tell client it's ready (WhatsApp)" onPress={notifyReady} />
       ) : null}
       <Button

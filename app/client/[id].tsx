@@ -15,6 +15,7 @@ import { deleteClient, getClient } from '../../src/db/repositories/clients';
 import { listMeasurements } from '../../src/db/repositories/measurements';
 import { listOrdersForClient } from '../../src/db/repositories/orders';
 import { garmentLabel } from '../../src/domain/garments';
+import { useFlag } from '../../src/features/flags/FeatureFlagsProvider';
 import { useFocusQuery } from '../../src/hooks/useFocusQuery';
 import { useSettings } from '../../src/hooks/useSettings';
 import { colors } from '../../src/theme';
@@ -25,6 +26,8 @@ export default function ClientDetailScreen() {
   const db = useSQLiteContext();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { currencySymbol } = useSettings();
+  const showOrders = useFlag('orders');
+  const showContact = useFlag('contact');
   const { data, loading } = useFocusQuery(
     async (d) => {
       const [client, measurements, orders] = await Promise.all([
@@ -84,7 +87,7 @@ export default function ClientDetailScreen() {
         {client.notes ? <Text style={textStyles.muted}>{client.notes}</Text> : null}
       </Card>
 
-      {client.phone ? (
+      {showContact && client.phone ? (
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <View style={{ flex: 1 }}>
             <Button title="Call" variant="secondary" onPress={() => open(telUrl(client.phone))} />
@@ -133,21 +136,25 @@ export default function ClientDetailScreen() {
         </Card>
       ))}
 
-      <SectionHeader
-        title="Orders"
-        action={
-          <LinkButton
-            title="＋ Add"
-            onPress={() =>
-              router.push({ pathname: '/order/form', params: { clientId: client.id } })
+      {showOrders ? (
+        <>
+          <SectionHeader
+            title="Orders"
+            action={
+              <LinkButton
+                title="＋ Add"
+                onPress={() =>
+                  router.push({ pathname: '/order/form', params: { clientId: client.id } })
+                }
+              />
             }
           />
-        }
-      />
-      {orders.length === 0 ? <EmptyState message="No orders yet." /> : null}
-      {orders.map((o) => (
-        <OrderCard key={o.id} order={o} currencySymbol={currencySymbol} />
-      ))}
+          {orders.length === 0 ? <EmptyState message="No orders yet." /> : null}
+          {orders.map((o) => (
+            <OrderCard key={o.id} order={o} currencySymbol={currencySymbol} />
+          ))}
+        </>
+      ) : null}
 
       <View style={{ height: 12 }} />
       <Button

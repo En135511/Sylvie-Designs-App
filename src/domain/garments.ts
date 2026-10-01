@@ -184,10 +184,30 @@ export function garmentLabel(key: string): string {
   return GARMENTS.find((g) => g.key === key)?.label ?? key;
 }
 
-export function fieldsForGarment(key: string): MeasurementField[] {
+/** The essential measurements shown when "Advanced measurements" is switched off. */
+export const CORE_FIELD_KEYS: ReadonlySet<string> = new Set([
+  'neck',
+  'shoulder',
+  'chest',
+  'underbust',
+  'waist',
+  'hip',
+  'sleeve',
+  'wrist',
+  'shirtLength',
+  'dressLength',
+  'skirtLength',
+  'thigh',
+  'ankle',
+  'inseam',
+  'outseam',
+]);
+
+export function fieldsForGarment(key: string, advanced = true): MeasurementField[] {
   const garment = GARMENTS.find((g) => g.key === key) ?? GARMENTS[GARMENTS.length - 1]!;
   return garment.fields.flatMap((k) => {
     const field = FIELD_BY_KEY.get(k);
-    return field ? [field] : [];
+    if (!field || (!advanced && !CORE_FIELD_KEYS.has(k))) return [];
+    return [field];
   });
 }

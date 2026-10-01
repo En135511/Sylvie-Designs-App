@@ -93,7 +93,8 @@ export async function restoreBackup(db: SQLiteDatabase, data: BackupData): Promi
     await db.runAsync('DELETE FROM orders');
     await db.runAsync('DELETE FROM measurements');
     await db.runAsync('DELETE FROM clients');
-    await db.runAsync('DELETE FROM settings');
+    // Feature switches are device configuration, not data: keep them across a restore.
+    await db.runAsync("DELETE FROM settings WHERE key NOT LIKE 'flag:%'");
 
     for (const c of data.clients) {
       await db.runAsync(

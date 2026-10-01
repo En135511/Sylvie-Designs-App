@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Text, type ColorValue } from 'react-native';
+import { useFlag } from '../../src/features/flags/FeatureFlagsProvider';
 import { colors } from '../../src/theme';
 
 const icon = (glyph: string) =>
@@ -8,6 +9,8 @@ const icon = (glyph: string) =>
   };
 
 export default function TabsLayout() {
+  const showToday = useFlag('today');
+  const showOrders = useFlag('orders');
   return (
     <Tabs
       screenOptions={{
@@ -20,9 +23,15 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: icon('📋') }} />
-      <Tabs.Screen name="clients" options={{ title: 'Clients', tabBarIcon: icon('👤') }} />
-      <Tabs.Screen name="orders" options={{ title: 'Orders', tabBarIcon: icon('🧵') }} />
+      <Tabs.Screen name="index" options={{ title: 'Clients', tabBarIcon: icon('👤') }} />
+      <Tabs.Screen
+        name="today"
+        options={{ title: 'Today', tabBarIcon: icon('📋'), href: showToday ? undefined : null }}
+      />
+      <Tabs.Screen
+        name="orders"
+        options={{ title: 'Orders', tabBarIcon: icon('🧵'), href: showOrders ? undefined : null }}
+      />
       <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: icon('⚙️') }} />
     </Tabs>
   );

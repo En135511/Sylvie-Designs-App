@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { garmentLabel } from '../domain/garments';
 import type { Order } from '../domain/types';
+import { useFlag } from '../features/flags/FeatureFlagsProvider';
 import { colors, spacing } from '../theme';
 import { daysUntil, describeDue } from '../utils/dates';
 import { formatMoney } from '../utils/money';
@@ -17,6 +18,7 @@ export function OrderCard({
   clientName?: string;
   currencySymbol: string;
 }) {
+  const showPayments = useFlag('payments');
   const balance = order.priceMinor - order.depositMinor;
   const overdue = order.status !== 'delivered' && daysUntil(order.dueDate) < 0;
   return (
@@ -29,7 +31,7 @@ export function OrderCard({
       <Text style={[textStyles.muted, overdue && { color: colors.danger, fontWeight: '700' }]}>
         {order.status === 'delivered' ? `Due ${order.dueDate}` : describeDue(order.dueDate)}
       </Text>
-      {balance > 0 && order.status !== 'delivered' ? (
+      {showPayments && balance > 0 && order.status !== 'delivered' ? (
         <Text style={textStyles.muted}>Balance: {formatMoney(balance, currencySymbol)}</Text>
       ) : null}
     </Card>

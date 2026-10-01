@@ -7,6 +7,7 @@ import { Button, Chip, ChipRow, Field, Screen, SectionHeader } from '../../src/c
 import { createOrder, getOrder, updateOrder } from '../../src/db/repositories/orders';
 import { GARMENTS } from '../../src/domain/garments';
 import { ORDER_STATUSES, STATUS_LABELS, type OrderStatus } from '../../src/domain/types';
+import { useFlag } from '../../src/features/flags/FeatureFlagsProvider';
 import { useSettings } from '../../src/hooks/useSettings';
 import { addDays, todayISO } from '../../src/utils/dates';
 import { minorToInput, parseMoney } from '../../src/utils/money';
@@ -15,6 +16,7 @@ export default function OrderFormScreen() {
   const db = useSQLiteContext();
   const { clientId, id } = useLocalSearchParams<{ clientId: string; id?: string }>();
   const { currencySymbol } = useSettings();
+  const showPayments = useFlag('payments');
 
   const [garment, setGarment] = useState('shirt');
   const [description, setDescription] = useState('');
@@ -101,20 +103,24 @@ export default function OrderFormScreen() {
         placeholder="Fabric, style, buttons, lining…"
       />
       <DateField label="Due date" value={dueDate} onChange={setDueDate} />
-      <Field
-        label={`Price (${currencySymbol})`}
-        value={price}
-        onChangeText={setPrice}
-        keyboardType="decimal-pad"
-        error={errors.price}
-      />
-      <Field
-        label={`Deposit paid (${currencySymbol})`}
-        value={deposit}
-        onChangeText={setDeposit}
-        keyboardType="decimal-pad"
-        error={errors.deposit}
-      />
+      {showPayments ? (
+        <>
+          <Field
+            label={`Price (${currencySymbol})`}
+            value={price}
+            onChangeText={setPrice}
+            keyboardType="decimal-pad"
+            error={errors.price}
+          />
+          <Field
+            label={`Deposit paid (${currencySymbol})`}
+            value={deposit}
+            onChangeText={setDeposit}
+            keyboardType="decimal-pad"
+            error={errors.deposit}
+          />
+        </>
+      ) : null}
       <SectionHeader title="Status" />
       <ChipRow>
         {ORDER_STATUSES.map((s) => (

@@ -1,6 +1,8 @@
+import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useState } from 'react';
-import { Alert, Text } from 'react-native';
+import { useRef, useState } from 'react';
+import { Alert, Pressable, Text } from 'react-native';
 import {
   Button,
   Card,
@@ -13,6 +15,7 @@ import {
 } from '../../src/components/ui';
 import { saveSetting } from '../../src/db/repositories/settings';
 import { exportBackup, pickBackup, restoreBackup } from '../../src/features/backup/backup';
+import { useFlag } from '../../src/features/flags/FeatureFlagsProvider';
 import { useSettings } from '../../src/hooks/useSettings';
 import type { Unit } from '../../src/domain/types';
 
@@ -24,6 +27,21 @@ export default function SettingsScreen() {
   const unit = unitChoice ?? settings.unit;
   const currency = currencyDraft ?? settings.currencySymbol;
   const [busy, setBusy] = useState(false);
+  const showUnit = useFlag('unitToggle');
+  const showPayments = useFlag('payments');
+  const showBackup = useFlag('backup');
+  const taps = useRef({ count: 0, last: 0 });
+
+  // Tapping the version 7 times in quick succession opens the hidden feature switches.
+  const onVersionTap = () => {
+    const now = Date.now();
+    taps.current.count = now - taps.current.last < 1500 ? taps.current.count + 1 : 1;
+    taps.current.last = now;
+    if (taps.current.count >= 7) {
+      taps.current.count = 0;
+      router.push('/features');
+    }
+  };
 
   const chooseUnit = async (next: Unit) => {
     setUnitChoice(next);
@@ -71,34 +89,57 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <SectionHeader title="Measurement unit" />
-      <ChipRow>
-        <Chip label="Centimetres" selected={unit === 'cm'} onPress={() => chooseUnit('cm')} />
-        <Chip label="Inches" selected={unit === 'in'} onPress={() => chooseUnit('in')} />
-      </ChipRow>
-      <Text style={textStyles.muted}>
-        Measurements are stored precisely, so you can switch any time without losing accuracy.
-      </Text>
+      {showUnit ? (
+        <>
+          <SectionHeader title="Measurement unit" />
+          <ChipRow>
+            <Chip label="Centimetres" selected={unit === 'cm'} onPress={() => chooseUnit('cm')} />
+            <Chip label="Inches" selected={unit === 'in'} onPress={() => chooseUnit('in')} />
+          </ChipRow>
+          <Text style={textStyles.muted}>
+            Measurements are stored precisely, so you can switch any time without losing accuracy.
+          </Text>
+        </>
+      ) : null}
 
-      <SectionHeader title="Currency symbol" />
-      <Field
-        label="Shown next to prices"
-        value={currency}
-        onChangeText={setCurrencyDraft}
-        onBlur={saveCurrency}
-        maxLength={6}
-        autoCapitalize="none"
-      />
+      {showPayments ? (
+        <>
+          <SectionHeader title="Currency symbol" />
+          <Field
+            label="Shown next to prices"
+            value={currency}
+            onChangeText={setCurrencyDraft}
+            onBlur={saveCurrency}
+            maxLength={6}
+            autoCapitalize="none"
+          />
+        </>
+      ) : null}
 
-      <SectionHeader title="Backup" />
-      <Card>
-        <Text style={textStyles.body}>
-          Your data lives only on this phone. Send yourself a backup regularly (WhatsApp, email or
-          Google Drive) so nothing is lost if the phone is lost or reset.
+      {showBackup ? (
+        <>
+          <SectionHeader title="Backup" />
+          <Card>
+            <Text style={textStyles.body}>
+              Your data lives only on this phone. Send yourself a backup regularly (WhatsApp, email
+              or Google Drive) so nothing is lost if the phone is lost or reset.
+            </Text>
+          </Card>
+          <Button title="Export backup" onPress={onExport} loading={busy} />
+          <Button
+            title="Restore from backup"
+            variant="secondary"
+            onPress={onRestore}
+            disabled={busy}
+          />
+        </>
+      ) : null}
+
+      <Pressable onPress={onVersionTap} style={{ paddingVertical: 24 }}>
+        <Text style={[textStyles.muted, { textAlign: 'center' }]}>
+          Sylvie Designs · Version {Constants.expoConfig?.version ?? '1.0.0'}
         </Text>
-      </Card>
-      <Button title="Export backup" onPress={onExport} loading={busy} />
-      <Button title="Restore from backup" variant="secondary" onPress={onRestore} disabled={busy} />
+      </Pressable>
     </Screen>
   );
 }

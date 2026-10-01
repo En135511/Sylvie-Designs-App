@@ -15,6 +15,14 @@ due dates, and keep payment balances. Built with Expo (React Native) and TypeScr
 
 All data is stored locally in SQLite. There is no server and no account.
 
+## Hidden feature switches
+
+Only clients and basic measurements are always on. Everything else can be turned on or off from
+a hidden screen: **Settings, then tap the "Version" line 7 times quickly**. Switches are saved on
+the phone, apply instantly, and never delete data (turning a feature off just hides it).
+Features are declared in `src/features/flags/features.ts`; to add one, add an entry there and wrap
+the UI with `useFlag('yourKey')`.
+
 ## Project structure
 
 ```
