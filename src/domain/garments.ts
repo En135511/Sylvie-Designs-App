@@ -4,27 +4,52 @@ export interface MeasurementField {
 }
 
 export const MEASUREMENT_FIELDS: readonly MeasurementField[] = [
+  // General
+  { key: 'height', label: 'Height' },
+  // Upper body
   { key: 'neck', label: 'Neck' },
-  { key: 'shoulder', label: 'Shoulder' },
+  { key: 'shoulder', label: 'Shoulder (across)' },
   { key: 'chest', label: 'Chest / Bust' },
   { key: 'underbust', label: 'Underbust' },
+  { key: 'bustPoint', label: 'Bust point to point' },
+  { key: 'shoulderToBust', label: 'Shoulder to bust point' },
+  { key: 'frontChestWidth', label: 'Front chest width' },
+  { key: 'backWidth', label: 'Back width' },
+  { key: 'armhole', label: 'Armhole' },
   { key: 'waist', label: 'Waist' },
+  { key: 'highHip', label: 'High hip' },
   { key: 'hip', label: 'Hip' },
-  { key: 'sleeve', label: 'Sleeve length' },
-  { key: 'bicep', label: 'Bicep' },
-  { key: 'wrist', label: 'Wrist' },
+  { key: 'napeToWaist', label: 'Nape to waist' },
   { key: 'backLength', label: 'Back length' },
   { key: 'frontLength', label: 'Front length' },
+  { key: 'waistToHip', label: 'Waist to hip' },
+  // Arms
+  { key: 'sleeve', label: 'Sleeve length (full)' },
+  { key: 'shortSleeve', label: 'Short sleeve length' },
+  { key: 'bicep', label: 'Bicep / upper arm' },
+  { key: 'elbow', label: 'Elbow' },
+  { key: 'wrist', label: 'Wrist / cuff' },
+  // Lengths
   { key: 'shirtLength', label: 'Shirt / top length' },
+  { key: 'jacketLength', label: 'Jacket length' },
   { key: 'dressLength', label: 'Dress length' },
   { key: 'skirtLength', label: 'Skirt length' },
-  { key: 'rise', label: 'Rise' },
+  { key: 'waistToFloor', label: 'Waist to floor' },
+  // Lower body
+  { key: 'rise', label: 'Rise / crotch depth' },
+  { key: 'crotchLength', label: 'Crotch length' },
   { key: 'thigh', label: 'Thigh' },
   { key: 'knee', label: 'Knee' },
+  { key: 'calf', label: 'Calf' },
+  { key: 'ankle', label: 'Ankle / hem' },
   { key: 'inseam', label: 'Inseam' },
   { key: 'outseam', label: 'Outseam / trouser length' },
-  { key: 'ankle', label: 'Ankle / hem' },
 ];
+
+/** Custom, tailor-defined measurements are stored under keys of the form "custom:<label>". */
+export const CUSTOM_PREFIX = 'custom:';
+
+export const customKey = (label: string): string => `${CUSTOM_PREFIX}${label.trim()}`;
 
 export interface Garment {
   key: string;
@@ -38,68 +63,120 @@ export const GARMENTS: readonly Garment[] = [
     key: 'shirt',
     label: 'Shirt',
     fields: [
+      'height',
       'neck',
       'shoulder',
       'chest',
       'waist',
       'hip',
+      'armhole',
       'sleeve',
+      'shortSleeve',
       'bicep',
       'wrist',
+      'backWidth',
       'shirtLength',
     ],
   },
   {
     key: 'trousers',
     label: 'Trousers',
-    fields: ['waist', 'hip', 'rise', 'thigh', 'knee', 'ankle', 'inseam', 'outseam'],
+    fields: [
+      'waist',
+      'highHip',
+      'hip',
+      'rise',
+      'crotchLength',
+      'thigh',
+      'knee',
+      'calf',
+      'ankle',
+      'inseam',
+      'outseam',
+    ],
   },
   {
     key: 'dress',
     label: 'Dress',
     fields: [
+      'height',
       'shoulder',
       'chest',
       'underbust',
+      'bustPoint',
+      'shoulderToBust',
       'waist',
+      'highHip',
       'hip',
+      'armhole',
       'sleeve',
+      'napeToWaist',
       'backLength',
+      'waistToHip',
       'dressLength',
+      'waistToFloor',
     ],
   },
   {
     key: 'skirt',
     label: 'Skirt',
-    fields: ['waist', 'hip', 'skirtLength'],
+    fields: ['waist', 'highHip', 'hip', 'waistToHip', 'skirtLength', 'waistToFloor'],
+  },
+  {
+    key: 'blouse',
+    label: 'Blouse / Top',
+    fields: [
+      'shoulder',
+      'chest',
+      'underbust',
+      'bustPoint',
+      'shoulderToBust',
+      'waist',
+      'hip',
+      'armhole',
+      'sleeve',
+      'shortSleeve',
+      'bicep',
+      'napeToWaist',
+      'shirtLength',
+    ],
   },
   {
     key: 'suit',
     label: 'Suit / Jacket',
     fields: [
+      'height',
       'neck',
       'shoulder',
       'chest',
       'waist',
       'hip',
+      'armhole',
       'sleeve',
       'bicep',
-      'backLength',
-      'shirtLength',
-      'outseam',
+      'wrist',
+      'backWidth',
+      'napeToWaist',
+      'jacketLength',
+      'rise',
+      'thigh',
+      'knee',
+      'ankle',
       'inseam',
+      'outseam',
     ],
   },
   {
     key: 'custom',
     label: 'Other',
-    fields: ['neck', 'shoulder', 'chest', 'waist', 'hip', 'sleeve', 'outseam'],
+    fields: ['height', 'neck', 'shoulder', 'chest', 'waist', 'hip', 'sleeve', 'outseam'],
   },
 ];
 
 const FIELD_BY_KEY = new Map(MEASUREMENT_FIELDS.map((f) => [f.key, f]));
 
 export function fieldLabel(key: string): string {
+  if (key.startsWith(CUSTOM_PREFIX)) return key.slice(CUSTOM_PREFIX.length);
   return FIELD_BY_KEY.get(key)?.label ?? key;
 }
 

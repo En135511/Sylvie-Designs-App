@@ -125,6 +125,11 @@ export default function ClientDetailScreen() {
           <Text style={textStyles.muted}>
             {formatDate(m.takenAt)} · {Object.keys(m.values).length} measurements
           </Text>
+          {m.notes ? (
+            <Text style={textStyles.muted} numberOfLines={2}>
+              {m.notes}
+            </Text>
+          ) : null}
         </Card>
       ))}
 

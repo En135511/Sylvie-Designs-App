@@ -45,6 +45,16 @@ npm run lint
 npm test
 ```
 
+### Previewing without an Android phone
+
+```bash
+npm run web          # opens http://localhost:8081 in your browser
+```
+
+Use the browser's device toolbar (F12, then Ctrl+Shift+M) to view it at phone size. Data is
+stored in the browser. The web build is for previewing only; the real app is the Android APK.
+Alternatively, install Android Studio and run an emulator, then press `a` after `npm start`.
+
 > Note: `expo-sqlite` and the other native modules work in Expo Go. If you later add a module
 > Expo Go does not include, use a development build.
 

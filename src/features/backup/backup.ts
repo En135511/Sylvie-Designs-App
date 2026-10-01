@@ -89,14 +89,14 @@ export async function pickBackup(): Promise<BackupData | null> {
 
 /** Replaces ALL data with the backup contents, atomically. */
 export async function restoreBackup(db: SQLiteDatabase, data: BackupData): Promise<void> {
-  await db.withExclusiveTransactionAsync(async (tx) => {
-    await tx.runAsync('DELETE FROM orders');
-    await tx.runAsync('DELETE FROM measurements');
-    await tx.runAsync('DELETE FROM clients');
-    await tx.runAsync('DELETE FROM settings');
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM orders');
+    await db.runAsync('DELETE FROM measurements');
+    await db.runAsync('DELETE FROM clients');
+    await db.runAsync('DELETE FROM settings');
 
     for (const c of data.clients) {
-      await tx.runAsync(
+      await db.runAsync(
         'INSERT INTO clients (id, name, phone, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
         c.id,
         c.name,
@@ -107,7 +107,7 @@ export async function restoreBackup(db: SQLiteDatabase, data: BackupData): Promi
       );
     }
     for (const m of data.measurements) {
-      await tx.runAsync(
+      await db.runAsync(
         `INSERT INTO measurements (id, client_id, garment, values_json, notes, taken_at, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         m.id,
@@ -120,7 +120,7 @@ export async function restoreBackup(db: SQLiteDatabase, data: BackupData): Promi
       );
     }
     for (const o of data.orders) {
-      await tx.runAsync(
+      await db.runAsync(
         `INSERT INTO orders (id, client_id, garment, description, due_date, price_minor, deposit_minor, status, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         o.id,
@@ -135,12 +135,12 @@ export async function restoreBackup(db: SQLiteDatabase, data: BackupData): Promi
         o.updatedAt,
       );
     }
-    await tx.runAsync(
+    await db.runAsync(
       'INSERT INTO settings (key, value) VALUES (?, ?)',
       'unit',
       data.settings.unit,
     );
-    await tx.runAsync(
+    await db.runAsync(
       'INSERT INTO settings (key, value) VALUES (?, ?)',
       'currencySymbol',
       data.settings.currencySymbol,

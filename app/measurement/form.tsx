@@ -20,7 +20,7 @@ import {
   updateMeasurement,
 } from '../../src/db/repositories/measurements';
 import { getSettings } from '../../src/db/repositories/settings';
-import { GARMENTS, fieldLabel, fieldsForGarment } from '../../src/domain/garments';
+import { GARMENTS, customKey, fieldLabel, fieldsForGarment } from '../../src/domain/garments';
 import type { MeasurementValues, Unit } from '../../src/domain/types';
 import { todayISO } from '../../src/utils/dates';
 import { cmToDisplay, parseNumber, toCm } from '../../src/utils/units';
@@ -41,6 +41,8 @@ export default function MeasurementFormScreen() {
   const [takenAt, setTakenAt] = useState(todayISO());
   const [notes, setNotes] = useState('');
   const [prefilled, setPrefilled] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customKeys, setCustomKeys] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   // Load unit + (when editing) the existing record.
@@ -81,11 +83,21 @@ export default function MeasurementFormScreen() {
   const fields = useMemo(() => {
     const base = fieldsForGarment(garment);
     const known = new Set(base.map((f) => f.key));
-    const extras = Object.keys(inputs)
-      .filter((k) => !known.has(k) && inputs[k]?.trim())
-      .map((k) => ({ key: k, label: fieldLabel(k) }));
+    const extraKeys = new Set([
+      ...Object.keys(inputs).filter((k) => !known.has(k) && inputs[k]?.trim()),
+      ...customKeys,
+    ]);
+    const extras = [...extraKeys].map((k) => ({ key: k, label: fieldLabel(k) }));
     return [...base, ...extras];
-  }, [garment, inputs]);
+  }, [garment, inputs, customKeys]);
+
+  const addCustom = () => {
+    const name = customName.trim();
+    if (!name) return;
+    const key = customKey(name);
+    setCustomKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
+    setCustomName('');
+  };
 
   const save = async () => {
     const nextErrors: Record<string, string> = {};
@@ -172,6 +184,19 @@ export default function MeasurementFormScreen() {
           placeholder={unit}
         />
       ))}
+      <Field
+        label="Add your own measurement"
+        value={customName}
+        onChangeText={setCustomName}
+        placeholder="e.g. Cap sleeve, Kaftan length"
+        onSubmitEditing={addCustom}
+      />
+      <Button
+        title="＋ Add measurement"
+        variant="secondary"
+        onPress={addCustom}
+        disabled={!customName.trim()}
+      />
       <Field
         label="Notes"
         value={notes}
