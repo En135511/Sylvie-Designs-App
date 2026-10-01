@@ -78,3 +78,15 @@ export function resolveFlags(stored: Record<string, string>): FeatureFlags {
   }
   return flags;
 }
+
+export interface AdvancedState {
+  /** True once the secret 7-tap gesture has been used: the "Advanced" switch is then shown. */
+  unlocked: boolean;
+  /** True while the "Advanced" switch is on and the feature switches are visible. */
+  open: boolean;
+}
+
+export function resolveAdvanced(stored: Record<string, string>): AdvancedState {
+  const unlocked = stored['flag:advancedUnlocked'] === '1';
+  return { unlocked, open: unlocked && stored['flag:advancedOpen'] === '1' };
+}

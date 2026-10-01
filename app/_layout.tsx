@@ -1,40 +1,70 @@
-import { Stack, type ErrorBoundaryProps } from 'expo-router';
+import { Stack, router, type ErrorBoundaryProps } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform, Text, View } from 'react-native';
-import { Button } from '../src/components/ui';
+import { Button, Icon, IconButton } from '../src/components/ui';
 import { migrate } from '../src/db/migrations';
 import { FeatureFlagsProvider } from '../src/features/flags/FeatureFlagsProvider';
 import { colors } from '../src/theme';
 
 const DATABASE_NAME = 'sylvie-designs.db';
 
+// Keep the splash screen up until the database is open, so there is no blank flash.
+void SplashScreen.preventAutoHideAsync().catch(() => {});
+
+/** Hides the splash screen as soon as it renders (the database is ready by then). */
+function HideSplash() {
+  useEffect(() => {
+    void SplashScreen.hideAsync().catch(() => {});
+  }, []);
+  return null;
+}
+
 /** Shown if the app crashes while starting, e.g. the database could not be opened. */
 function StartupError({ error, retry }: { error: Error; retry: () => void }) {
   const dbBusy = /createSyncAccessHandle|Access Handle|Invalid VFS state/i.test(error.message);
+  useEffect(() => {
+    void SplashScreen.hideAsync().catch(() => {});
+  }, []);
   return (
     <View
       style={{
         flex: 1,
         justifyContent: 'center',
-        padding: 24,
-        gap: 16,
+        alignItems: 'center',
+        padding: 32,
+        gap: 14,
         backgroundColor: colors.background,
       }}
     >
-      <Text style={{ fontSize: 20, fontWeight: '700', color: colors.text }}>
+      <View
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: 36,
+          backgroundColor: colors.dangerSoft,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Icon name="alert-circle-outline" size={36} color={colors.danger} />
+      </View>
+      <Text style={{ fontSize: 22, fontWeight: '700', color: colors.text, textAlign: 'center' }}>
         Something went wrong
       </Text>
-      <Text style={{ fontSize: 16, color: colors.text }}>
+      <Text style={{ fontSize: 16, color: colors.textMuted, textAlign: 'center', lineHeight: 22 }}>
         {dbBusy && Platform.OS === 'web'
           ? 'The app is already open in another browser tab or window. Close the other one, then try again.'
           : error.message}
       </Text>
-      <Button
-        title="Try again"
-        onPress={() => (Platform.OS === 'web' ? window.location.reload() : retry())}
-      />
+      <View style={{ alignSelf: 'stretch', marginTop: 8 }}>
+        <Button
+          title="Try again"
+          onPress={() => (Platform.OS === 'web' ? window.location.reload() : retry())}
+        />
+      </View>
     </View>
   );
 }
@@ -89,6 +119,7 @@ function DatabaseGate({ children }: { children: ReactNode }) {
 
   return (
     <SQLiteProvider key={attempt} databaseName={DATABASE_NAME} onInit={migrate} onError={onError}>
+      <HideSplash />
       {children}
     </SQLiteProvider>
   );
@@ -102,8 +133,20 @@ export default function RootLayout() {
         <Stack
           screenOptions={{
             headerStyle: { backgroundColor: colors.background },
+            headerShadowVisible: false,
             headerTintColor: colors.primary,
-            headerTitleStyle: { color: colors.text },
+            headerTitleStyle: { color: colors.text, fontWeight: '700', fontSize: 18 },
+            headerBackVisible: false,
+            // Custom back button: a full 48 px touch target on every platform.
+            headerLeft: ({ canGoBack }) =>
+              canGoBack ? (
+                <IconButton
+                  icon="chevron-back"
+                  label="Go back"
+                  tone="plain"
+                  onPress={() => router.back()}
+                />
+              ) : null,
             contentStyle: { backgroundColor: colors.background },
           }}
         >
@@ -118,7 +161,6 @@ export default function RootLayout() {
           <Stack.Screen name="class/[id]" options={{ title: 'Class' }} />
           <Stack.Screen name="class/add-students" options={{ title: 'Add students' }} />
           <Stack.Screen name="measurements-setup" options={{ title: 'Choose measurements' }} />
-          <Stack.Screen name="features" options={{ title: 'Feature switches' }} />
         </Stack>
       </FeatureFlagsProvider>
     </DatabaseGate>

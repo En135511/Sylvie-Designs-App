@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_FLAGS, resolveFlags } from './features';
+import { DEFAULT_FLAGS, resolveAdvanced, resolveFlags } from './features';
 
 describe('feature flags', () => {
   it('uses defaults when nothing is stored', () => {
@@ -20,5 +20,23 @@ describe('feature flags', () => {
     expect(flags.backup).toBe(false);
     expect(flags.payments).toBe(false);
     expect('nonsense' in flags).toBe(false);
+  });
+});
+
+describe('advanced switch state', () => {
+  it('is locked and closed by default', () => {
+    expect(resolveAdvanced({})).toEqual({ unlocked: false, open: false });
+  });
+
+  it('can only be open when unlocked', () => {
+    expect(resolveAdvanced({ 'flag:advancedOpen': '1' })).toEqual({ unlocked: false, open: false });
+    expect(resolveAdvanced({ 'flag:advancedUnlocked': '1' })).toEqual({
+      unlocked: true,
+      open: false,
+    });
+    expect(resolveAdvanced({ 'flag:advancedUnlocked': '1', 'flag:advancedOpen': '1' })).toEqual({
+      unlocked: true,
+      open: true,
+    });
   });
 });

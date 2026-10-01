@@ -8,11 +8,11 @@ export const MEASUREMENT_FIELDS: readonly MeasurementField[] = [
   { key: 'height', label: 'Height' },
   // Upper body
   { key: 'neck', label: 'Neck' },
-  { key: 'shoulder', label: 'Shoulder (across)' },
+  { key: 'shoulder', label: 'Shoulder' },
   { key: 'chest', label: 'Chest / Bust' },
   { key: 'underbust', label: 'Underbust' },
-  { key: 'bustPoint', label: 'Bust point to point' },
-  { key: 'shoulderToBust', label: 'Shoulder to bust point' },
+  { key: 'bustPoint', label: 'Bust span' },
+  { key: 'shoulderToBust', label: 'Shoulder to bust' },
   { key: 'frontChestWidth', label: 'Front chest width' },
   { key: 'backWidth', label: 'Back width' },
   { key: 'armhole', label: 'Armhole' },
@@ -24,26 +24,26 @@ export const MEASUREMENT_FIELDS: readonly MeasurementField[] = [
   { key: 'frontLength', label: 'Front length' },
   { key: 'waistToHip', label: 'Waist to hip' },
   // Arms
-  { key: 'sleeve', label: 'Sleeve length (full)' },
-  { key: 'shortSleeve', label: 'Short sleeve length' },
-  { key: 'bicep', label: 'Bicep / upper arm' },
+  { key: 'sleeve', label: 'Sleeve (full)' },
+  { key: 'shortSleeve', label: 'Short sleeve' },
+  { key: 'bicep', label: 'Bicep' },
   { key: 'elbow', label: 'Elbow' },
-  { key: 'wrist', label: 'Wrist / cuff' },
+  { key: 'wrist', label: 'Wrist' },
   // Lengths
-  { key: 'shirtLength', label: 'Shirt / top length' },
+  { key: 'shirtLength', label: 'Shirt length' },
   { key: 'jacketLength', label: 'Jacket length' },
   { key: 'dressLength', label: 'Dress length' },
   { key: 'skirtLength', label: 'Skirt length' },
   { key: 'waistToFloor', label: 'Waist to floor' },
   // Lower body
-  { key: 'rise', label: 'Rise / crotch depth' },
+  { key: 'rise', label: 'Rise' },
   { key: 'crotchLength', label: 'Crotch length' },
   { key: 'thigh', label: 'Thigh' },
   { key: 'knee', label: 'Knee' },
   { key: 'calf', label: 'Calf' },
   { key: 'ankle', label: 'Ankle / hem' },
   { key: 'inseam', label: 'Inseam' },
-  { key: 'outseam', label: 'Outseam / trouser length' },
+  { key: 'outseam', label: 'Trouser length' },
 ];
 
 /** Custom, tailor-defined measurements are stored under keys of the form "custom:<label>". */

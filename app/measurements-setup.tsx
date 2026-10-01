@@ -1,7 +1,15 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { Switch, Text, View } from 'react-native';
-import { Button, Card, Screen, SectionHeader, textStyles } from '../src/components/ui';
+import { StyleSheet, Text, View } from 'react-native';
+import {
+  Button,
+  Card,
+  LoadingView,
+  Screen,
+  SectionHeader,
+  SwitchRow,
+  textStyles,
+} from '../src/components/ui';
 import { getEnabledFields, saveEnabledFields } from '../src/db/repositories/settings';
 import {
   DEFAULT_ENABLED_FIELDS,
@@ -25,8 +33,8 @@ export default function MeasurementsSetupScreen() {
 
   if (!enabled) {
     return (
-      <Screen>
-        <Text style={textStyles.muted}>Loading…</Text>
+      <Screen scroll={false}>
+        <LoadingView />
       </Screen>
     );
   }
@@ -45,13 +53,15 @@ export default function MeasurementsSetupScreen() {
 
   return (
     <Screen>
-      <Text style={textStyles.muted}>
-        Switch on the measurements you take. Only those will appear when you record a client.
-        Measurements you have already saved are never deleted.
-      </Text>
-      <Text style={textStyles.body}>
-        {enabled.size} of {MEASUREMENT_FIELDS.length} selected
-      </Text>
+      <Card style={{ gap: spacing.xs }}>
+        <Text style={textStyles.title}>
+          {enabled.size} of {MEASUREMENT_FIELDS.length} selected
+        </Text>
+        <Text style={textStyles.muted}>
+          Switch on the measurements you take. Only those appear when you record a client.
+          Measurements you have already saved are never deleted.
+        </Text>
+      </Card>
       <View style={{ flexDirection: 'row', gap: spacing.md }}>
         <View style={{ flex: 1 }}>
           <Button
@@ -72,19 +82,24 @@ export default function MeasurementsSetupScreen() {
       {FIELD_GROUPS.map((group) => (
         <View key={group.title} style={{ gap: spacing.sm }}>
           <SectionHeader title={group.title} />
-          {group.keys.map((key) => (
-            <Card key={key}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-                <Text style={[textStyles.body, { flex: 1 }]}>{fieldLabel(key)}</Text>
-                <Switch
-                  accessibilityLabel={fieldLabel(key)}
+          <Card style={{ paddingVertical: spacing.xs }}>
+            {group.keys.map((key, index) => (
+              <View
+                key={key}
+                style={
+                  index > 0
+                    ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }
+                    : undefined
+                }
+              >
+                <SwitchRow
+                  label={fieldLabel(key)}
                   value={enabled.has(key)}
                   onValueChange={(on) => toggle(key, on)}
-                  trackColor={{ true: colors.primary }}
                 />
               </View>
-            </Card>
-          ))}
+            ))}
+          </Card>
         </View>
       ))}
     </Screen>

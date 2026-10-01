@@ -7,7 +7,7 @@ import { getSettings } from '../../db/repositories/settings';
 import { parseBackup, serializeBackup, type BackupData } from './format';
 import type { Measurement, Order, School, SchoolClass } from '../../domain/types';
 
-async function collect(db: SQLiteDatabase) {
+export async function collectBackupData(db: SQLiteDatabase) {
   const [clients, settings, measurementRows, orderRows, schoolRows, classRows] = await Promise.all([
     listClients(db),
     getSettings(db),
@@ -78,7 +78,7 @@ async function collect(db: SQLiteDatabase) {
 
 /** Writes a JSON backup to the cache and opens the Android share sheet. */
 export async function exportBackup(db: SQLiteDatabase): Promise<void> {
-  const json = serializeBackup(await collect(db));
+  const json = serializeBackup(await collectBackupData(db));
   const stamp = new Date().toISOString().slice(0, 10);
   const file = new File(Paths.cache, `sylvie-designs-backup-${stamp}.json`);
   if (file.exists) file.delete();

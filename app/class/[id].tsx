@@ -1,15 +1,19 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Alert, Text } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import {
   Button,
   Card,
   Chip,
-  ChipRow,
+  ChipScroller,
   EmptyState,
-  Field,
+  Icon,
+  IconButton,
+  ListRow,
+  LoadingView,
   Screen,
+  SearchBar,
   SectionHeader,
   textStyles,
 } from '../../src/components/ui';
@@ -23,7 +27,7 @@ import { GARMENTS } from '../../src/domain/garments';
 import { exportClassSheet } from '../../src/features/schools/exportSheet';
 import { useFocusQuery } from '../../src/hooks/useFocusQuery';
 import { useSettings } from '../../src/hooks/useSettings';
-import { colors } from '../../src/theme';
+import { colors, font, radius, spacing } from '../../src/theme';
 
 export default function ClassDetailScreen() {
   const db = useSQLiteContext();
@@ -39,15 +43,15 @@ export default function ClassDetailScreen() {
 
   if (loading) {
     return (
-      <Screen>
-        <Text style={textStyles.muted}>Loading…</Text>
+      <Screen scroll={false}>
+        <LoadingView />
       </Screen>
     );
   }
   if (!data?.cls) {
     return (
       <Screen>
-        <EmptyState message="This class no longer exists." />
+        <EmptyState icon="people-outline" message="This class no longer exists." />
       </Screen>
     );
   }
@@ -110,12 +114,29 @@ export default function ClassDetailScreen() {
       ],
     );
 
+  const percent = students.length ? Math.round((measured / students.length) * 100) : 0;
+  const addStudentsRoute = () =>
+    router.push({ pathname: '/class/add-students', params: { classId: cls.id } });
+
   return (
     <Screen>
-      <Stack.Screen options={{ title: `${cls.schoolName} · ${cls.name}` }} />
+      <Stack.Screen
+        options={{
+          title: cls.name,
+          headerRight: () => (
+            <IconButton
+              icon="trash-outline"
+              label="Delete class"
+              tone="plain"
+              onPress={confirmDelete}
+            />
+          ),
+        }}
+      />
+      <Text style={styles.school}>{cls.schoolName}</Text>
 
       <SectionHeader title="Garment to measure" />
-      <ChipRow>
+      <ChipScroller>
         {GARMENTS.map((g) => (
           <Chip
             key={g.key}
@@ -124,52 +145,98 @@ export default function ClassDetailScreen() {
             onPress={() => setGarment(g.key)}
           />
         ))}
-      </ChipRow>
+      </ChipScroller>
 
-      <Card>
-        <Text style={textStyles.title}>
-          {measured} of {students.length} measured
-        </Text>
+      <Card style={{ gap: spacing.sm }}>
+        <View style={styles.progressTop}>
+          <Text style={textStyles.title}>
+            {measured} of {students.length} measured
+          </Text>
+          <Text style={styles.percent}>{percent}%</Text>
+        </View>
+        <View
+          style={styles.track}
+          accessibilityRole="progressbar"
+          accessibilityValue={{ min: 0, max: students.length, now: measured }}
+        >
+          <View style={[styles.fill, { width: `${percent}%` }]} />
+        </View>
         <Text style={textStyles.muted}>
           {students.length - measured} still to do for this garment
         </Text>
       </Card>
 
-      <Button title="Measure next student" onPress={measureNext} disabled={students.length === 0} />
       <Button
-        title="＋ Add students (paste a list)"
-        variant="secondary"
-        onPress={() =>
-          router.push({ pathname: '/class/add-students', params: { classId: cls.id } })
-        }
+        title="Measure next student"
+        icon="arrow-forward"
+        onPress={measureNext}
+        disabled={students.length === 0}
       />
+      <View style={styles.pair}>
+        <View style={{ flex: 1 }}>
+          <Button
+            title="Add students"
+            icon="person-add-outline"
+            variant="secondary"
+            onPress={addStudentsRoute}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button
+            title="Export sheet"
+            icon="download-outline"
+            variant="secondary"
+            onPress={onExport}
+            loading={exporting}
+            disabled={measured === 0}
+          />
+        </View>
+      </View>
 
-      <SectionHeader title="Students" />
+      <SectionHeader title={`Students · ${students.length}`} />
       {students.length > 8 ? (
-        <Field label="Find a student" value={search} onChangeText={setSearch} />
+        <SearchBar value={search} onChangeText={setSearch} placeholder="Find a student" />
       ) : null}
       {students.length === 0 ? (
-        <EmptyState message="No students yet. Paste the class list to add them all at once." />
+        <EmptyState
+          icon="person-add-outline"
+          title="No students yet"
+          message="Paste the class list to add every student at once."
+          actionLabel="Add students"
+          onAction={addStudentsRoute}
+        />
       ) : null}
-      {shown.map((s) => (
-        <Card key={s.id} onPress={() => openStudent(s.id, s.measurementId)}>
-          <Text style={textStyles.body}>
-            <Text style={{ color: s.measurementId ? colors.success : colors.textMuted }}>
-              {s.measurementId ? '✓ ' : '○ '}
-            </Text>
-            {s.name}
-          </Text>
-        </Card>
+      {shown.map((st) => (
+        <ListRow
+          key={st.id}
+          title={st.name}
+          avatarName={st.name}
+          subtitle={st.measurementId ? 'Measured' : 'Not measured yet'}
+          chevron={false}
+          trailing={
+            <Icon
+              name={st.measurementId ? 'checkmark-circle' : 'ellipse-outline'}
+              size={24}
+              color={st.measurementId ? colors.success : colors.textMuted}
+            />
+          }
+          onPress={() => openStudent(st.id, st.measurementId)}
+        />
       ))}
-
-      <Button
-        title="Export class sheet (CSV)"
-        variant="secondary"
-        onPress={onExport}
-        loading={exporting}
-        disabled={measured === 0}
-      />
-      <Button title="Delete class" variant="danger" onPress={confirmDelete} />
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  school: { fontSize: font.body, color: colors.textMuted, marginTop: -spacing.xs },
+  progressTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  percent: { fontSize: font.title, fontWeight: '800', color: colors.primary },
+  track: {
+    height: 10,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceMuted,
+    overflow: 'hidden',
+  },
+  fill: { height: 10, borderRadius: radius.pill, backgroundColor: colors.primary },
+  pair: { flexDirection: 'row', gap: spacing.md },
+});

@@ -4,7 +4,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
  * Ordered, append-only list of schema migrations. Never edit a shipped migration;
  * add a new one. The applied version is tracked with `PRAGMA user_version`.
  */
-const MIGRATIONS: readonly string[] = [
+export const MIGRATIONS: readonly string[] = [
   `
   CREATE TABLE clients (
     id TEXT PRIMARY KEY NOT NULL,

@@ -43,7 +43,9 @@ export default function SchoolFormScreen() {
   };
 
   return (
-    <Screen>
+    <Screen
+      footer={<Button title="Save school" icon="checkmark" onPress={save} loading={saving} />}
+    >
       <Stack.Screen options={{ title: id ? 'Edit school' : 'New school' }} />
       <Field
         label="School name"
@@ -63,7 +65,6 @@ export default function SchoolFormScreen() {
         multiline
         placeholder="Contact person, uniform colours, deadline…"
       />
-      <Button title="Save" onPress={save} loading={saving} />
     </Screen>
   );
 }

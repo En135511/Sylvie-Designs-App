@@ -1,9 +1,18 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { DateField } from '../../src/components/DateField';
-import { Button, Chip, ChipRow, Field, Screen, SectionHeader } from '../../src/components/ui';
+import {
+  Button,
+  Chip,
+  ChipRow,
+  ChipScroller,
+  Field,
+  Screen,
+  SectionHeader,
+} from '../../src/components/ui';
+import { spacing } from '../../src/theme';
 import { createOrder, getOrder, updateOrder } from '../../src/db/repositories/orders';
 import { GARMENTS } from '../../src/domain/garments';
 import { ORDER_STATUSES, STATUS_LABELS, type OrderStatus } from '../../src/domain/types';
@@ -82,10 +91,10 @@ export default function OrderFormScreen() {
   };
 
   return (
-    <Screen>
+    <Screen footer={<Button title="Save order" icon="checkmark" onPress={save} loading={saving} />}>
       <Stack.Screen options={{ title: id ? 'Edit order' : 'New order' }} />
       <SectionHeader title="Garment" />
-      <ChipRow>
+      <ChipScroller>
         {GARMENTS.map((g) => (
           <Chip
             key={g.key}
@@ -94,7 +103,7 @@ export default function OrderFormScreen() {
             onPress={() => setGarment(g.key)}
           />
         ))}
-      </ChipRow>
+      </ChipScroller>
       <Field
         label="Details"
         value={description}
@@ -104,22 +113,28 @@ export default function OrderFormScreen() {
       />
       <DateField label="Due date" value={dueDate} onChange={setDueDate} />
       {showPayments ? (
-        <>
-          <Field
-            label={`Price (${currencySymbol})`}
-            value={price}
-            onChangeText={setPrice}
-            keyboardType="decimal-pad"
-            error={errors.price}
-          />
-          <Field
-            label={`Deposit paid (${currencySymbol})`}
-            value={deposit}
-            onChangeText={setDeposit}
-            keyboardType="decimal-pad"
-            error={errors.deposit}
-          />
-        </>
+        <View style={styles.pair}>
+          <View style={styles.half}>
+            <Field
+              label="Price"
+              value={price}
+              onChangeText={setPrice}
+              keyboardType="decimal-pad"
+              suffix={currencySymbol.trim()}
+              error={errors.price}
+            />
+          </View>
+          <View style={styles.half}>
+            <Field
+              label="Deposit paid"
+              value={deposit}
+              onChangeText={setDeposit}
+              keyboardType="decimal-pad"
+              suffix={currencySymbol.trim()}
+              error={errors.deposit}
+            />
+          </View>
+        </View>
       ) : null}
       <SectionHeader title="Status" />
       <ChipRow>
@@ -132,7 +147,11 @@ export default function OrderFormScreen() {
           />
         ))}
       </ChipRow>
-      <Button title="Save" onPress={save} loading={saving} />
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  pair: { flexDirection: 'row', gap: spacing.md },
+  half: { flex: 1 },
+});

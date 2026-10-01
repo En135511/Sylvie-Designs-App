@@ -1,12 +1,16 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { Alert, Linking, Text, View } from 'react-native';
+import { Alert, Linking, StyleSheet, Text, View } from 'react-native';
 import { OrderCard } from '../../src/components/OrderCard';
 import {
+  Avatar,
   Button,
   Card,
   EmptyState,
-  LinkButton,
+  IconButton,
+  ListRow,
+  LoadingView,
+  QuickAction,
   Screen,
   SectionHeader,
   textStyles,
@@ -18,7 +22,7 @@ import { garmentLabel } from '../../src/domain/garments';
 import { useFlag } from '../../src/features/flags/FeatureFlagsProvider';
 import { useFocusQuery } from '../../src/hooks/useFocusQuery';
 import { useSettings } from '../../src/hooks/useSettings';
-import { colors } from '../../src/theme';
+import { colors, font, radius, spacing } from '../../src/theme';
 import { formatDate } from '../../src/utils/dates';
 import { telUrl, whatsappUrl } from '../../src/utils/phone';
 
@@ -40,26 +44,31 @@ export default function ClientDetailScreen() {
     [id],
   );
 
-  if (loading)
+  if (loading) {
     return (
-      <Screen>
-        <Text style={textStyles.muted}>Loading…</Text>
+      <Screen scroll={false}>
+        <LoadingView />
       </Screen>
     );
-  if (!data?.client)
+  }
+  if (!data?.client) {
     return (
       <Screen>
-        <EmptyState message="This client no longer exists." />
+        <EmptyState icon="person-outline" message="This client no longer exists." />
       </Screen>
     );
+  }
   const { client, measurements, orders } = data;
 
   const open = (url: string | null) => {
     if (!url) return;
     Linking.openURL(url).catch(() =>
-      Alert.alert('Could not open', 'No app available to handle this.'),
+      Alert.alert('Could not open', 'No app is available to handle this.'),
     );
   };
+  const addMeasurement = () =>
+    router.push({ pathname: '/measurement/form', params: { clientId: client.id } });
+  const addOrder = () => router.push({ pathname: '/order/form', params: { clientId: client.id } });
 
   const confirmDelete = () =>
     Alert.alert(
@@ -80,92 +89,110 @@ export default function ClientDetailScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: client.name }} />
-      <Card>
-        <Text style={textStyles.title}>{client.name}</Text>
-        {client.phone ? <Text style={textStyles.body}>{client.phone}</Text> : null}
-        {client.notes ? <Text style={textStyles.muted}>{client.notes}</Text> : null}
+      <Stack.Screen
+        options={{
+          title: '',
+          headerRight: () => (
+            <IconButton
+              icon="create-outline"
+              label="Edit client"
+              tone="plain"
+              onPress={() => router.push({ pathname: '/client/form', params: { id: client.id } })}
+            />
+          ),
+        }}
+      />
+
+      <Card style={styles.header}>
+        <Avatar name={client.name} size={64} />
+        <Text style={styles.name}>{client.name}</Text>
+        {client.phone ? <Text style={textStyles.muted}>{client.phone}</Text> : null}
+        {client.notes ? (
+          <View style={styles.notes}>
+            <Text style={styles.notesText}>{client.notes}</Text>
+          </View>
+        ) : null}
       </Card>
 
-      {showContact && client.phone ? (
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          <View style={{ flex: 1 }}>
-            <Button title="Call" variant="secondary" onPress={() => open(telUrl(client.phone))} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Button
-              title="WhatsApp"
-              variant="secondary"
+      <View style={styles.actions}>
+        <QuickAction icon="resize-outline" label="Measure" onPress={addMeasurement} />
+        {showOrders ? <QuickAction icon="shirt-outline" label="Order" onPress={addOrder} /> : null}
+        {showContact && client.phone ? (
+          <>
+            <QuickAction
+              icon="call-outline"
+              label="Call"
+              onPress={() => open(telUrl(client.phone))}
+            />
+            <QuickAction
+              icon="logo-whatsapp"
+              label="WhatsApp"
               onPress={() => open(whatsappUrl(client.phone))}
             />
-          </View>
-        </View>
-      ) : null}
+          </>
+        ) : null}
+      </View>
 
-      <SectionHeader
-        title="Measurements"
-        action={
-          <LinkButton
-            title="＋ Add"
-            onPress={() =>
-              router.push({ pathname: '/measurement/form', params: { clientId: client.id } })
-            }
-          />
-        }
-      />
-      {measurements.length === 0 ? <EmptyState message="No measurements recorded yet." /> : null}
+      <SectionHeader title="Measurements" />
+      {measurements.length === 0 ? (
+        <Text style={textStyles.muted}>No measurements recorded yet. Tap Measure to add some.</Text>
+      ) : null}
       {measurements.map((m) => (
-        <Card
+        <ListRow
           key={m.id}
+          icon="resize"
+          title={garmentLabel(m.garment)}
+          subtitle={`${formatDate(m.takenAt)} · ${Object.keys(m.values).length} measurements${m.notes ? ` · ${m.notes}` : ''}`}
           onPress={() =>
             router.push({
               pathname: '/measurement/form',
               params: { clientId: client.id, id: m.id },
             })
           }
-        >
-          <Text style={textStyles.title}>{garmentLabel(m.garment)}</Text>
-          <Text style={textStyles.muted}>
-            {formatDate(m.takenAt)} · {Object.keys(m.values).length} measurements
-          </Text>
-          {m.notes ? (
-            <Text style={textStyles.muted} numberOfLines={2}>
-              {m.notes}
-            </Text>
-          ) : null}
-        </Card>
+        />
       ))}
 
       {showOrders ? (
         <>
-          <SectionHeader
-            title="Orders"
-            action={
-              <LinkButton
-                title="＋ Add"
-                onPress={() =>
-                  router.push({ pathname: '/order/form', params: { clientId: client.id } })
-                }
-              />
-            }
-          />
-          {orders.length === 0 ? <EmptyState message="No orders yet." /> : null}
+          <SectionHeader title="Orders" />
+          {orders.length === 0 ? <Text style={textStyles.muted}>No orders yet.</Text> : null}
           {orders.map((o) => (
             <OrderCard key={o.id} order={o} currencySymbol={currencySymbol} />
           ))}
         </>
       ) : null}
 
-      <View style={{ height: 12 }} />
-      <Button
-        title="Edit client"
-        variant="secondary"
-        onPress={() => router.push({ pathname: '/client/form', params: { id: client.id } })}
-      />
-      <Button title="Delete client" variant="danger" onPress={confirmDelete} />
-      <Text style={[textStyles.muted, { color: colors.textMuted, textAlign: 'center' }]}>
-        Added {formatDate(client.createdAt.slice(0, 10))}
-      </Text>
+      <View style={styles.danger}>
+        <Button
+          title="Delete client"
+          icon="trash-outline"
+          variant="ghostDanger"
+          onPress={confirmDelete}
+        />
+        <Text style={styles.added}>Added {formatDate(client.createdAt.slice(0, 10))}</Text>
+      </View>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  header: { alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.xl },
+  name: {
+    fontSize: font.heading,
+    fontWeight: '800',
+    color: colors.text,
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  },
+  notes: {
+    alignSelf: 'stretch',
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginTop: spacing.md,
+  },
+  notesText: { fontSize: font.small + 1, color: colors.text, lineHeight: 20 },
+  actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
+  danger: { marginTop: spacing.xl, alignItems: 'center', gap: spacing.xs },
+  added: { fontSize: font.caption, color: colors.textMuted },
+});

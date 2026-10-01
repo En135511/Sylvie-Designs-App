@@ -25,22 +25,32 @@ export default function AddStudentsScreen() {
   };
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <Button
+          title={
+            names.length
+              ? `Add ${names.length} ${names.length === 1 ? 'student' : 'students'}`
+              : 'Add students'
+          }
+          icon="person-add"
+          onPress={save}
+          disabled={names.length === 0}
+          loading={saving}
+        />
+      }
+    >
       <Stack.Screen options={{ title: 'Add students' }} />
       <Field
-        label="Student names (one per line, or paste a whole class list)"
+        label="Paste the class list"
+        hint="One name per line. Numbering, blank lines and duplicates are cleaned up for you."
         value={text}
         onChangeText={setText}
         multiline
         autoCapitalize="words"
+        autoFocus
         placeholder={'Amina Wanjiru\nJohn Otieno\nMary Achieng'}
-        style={{ minHeight: 220 }}
-      />
-      <Button
-        title={names.length ? `Add ${names.length} students` : 'Add students'}
-        onPress={save}
-        disabled={names.length === 0}
-        loading={saving}
+        style={{ minHeight: 240 }}
       />
     </Screen>
   );

@@ -1,12 +1,15 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Alert, Text } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import {
   Button,
   Card,
   EmptyState,
   Field,
+  IconButton,
+  ListRow,
+  LoadingView,
   Screen,
   SectionHeader,
   textStyles,
@@ -18,6 +21,7 @@ import {
   listClassesForSchool,
 } from '../../src/db/repositories/schools';
 import { useFocusQuery } from '../../src/hooks/useFocusQuery';
+import { spacing } from '../../src/theme';
 
 export default function SchoolDetailScreen() {
   const db = useSQLiteContext();
@@ -31,15 +35,15 @@ export default function SchoolDetailScreen() {
 
   if (loading) {
     return (
-      <Screen>
-        <Text style={textStyles.muted}>Loading…</Text>
+      <Screen scroll={false}>
+        <LoadingView />
       </Screen>
     );
   }
   if (!data?.school) {
     return (
       <Screen>
-        <EmptyState message="This school no longer exists." />
+        <EmptyState icon="school-outline" message="This school no longer exists." />
       </Screen>
     );
   }
@@ -74,7 +78,19 @@ export default function SchoolDetailScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: school.name }} />
+      <Stack.Screen
+        options={{
+          title: school.name,
+          headerRight: () => (
+            <IconButton
+              icon="create-outline"
+              label="Edit school"
+              tone="plain"
+              onPress={() => router.push({ pathname: '/school/form', params: { id: school.id } })}
+            />
+          ),
+        }}
+      />
       {school.notes ? (
         <Card>
           <Text style={textStyles.body}>{school.notes}</Text>
@@ -83,40 +99,45 @@ export default function SchoolDetailScreen() {
 
       <SectionHeader title="Classes" />
       {classes.length === 0 ? (
-        <EmptyState message="No classes yet. Add the first one below." />
+        <Text style={textStyles.muted}>No classes yet. Add the first one below.</Text>
       ) : null}
       {classes.map((c) => (
-        <Card
+        <ListRow
           key={c.id}
+          icon="people"
+          title={c.name}
+          subtitle={`${c.studentCount} ${c.studentCount === 1 ? 'student' : 'students'}`}
           onPress={() => router.push({ pathname: '/class/[id]', params: { id: c.id } })}
-        >
-          <Text style={textStyles.title}>{c.name}</Text>
-          <Text style={textStyles.muted}>
-            {c.studentCount} {c.studentCount === 1 ? 'student' : 'students'}
-          </Text>
-        </Card>
+        />
       ))}
 
-      <Field
-        label="Add a class"
-        value={className}
-        onChangeText={setClassName}
-        placeholder="e.g. Class 4B, Form 2 East"
-        onSubmitEditing={addClass}
-      />
-      <Button
-        title="＋ Add class"
-        variant="secondary"
-        onPress={addClass}
-        disabled={!className.trim()}
-      />
+      <View style={styles.add}>
+        <View style={{ flex: 1 }}>
+          <Field
+            label="Add a class"
+            value={className}
+            onChangeText={setClassName}
+            placeholder="e.g. Class 4B, Form 2 East"
+            onSubmitEditing={addClass}
+            returnKeyType="done"
+          />
+        </View>
+        <IconButton icon="add" label="Add class" onPress={addClass} disabled={!className.trim()} />
+      </View>
 
-      <Button
-        title="Edit school"
-        variant="secondary"
-        onPress={() => router.push({ pathname: '/school/form', params: { id: school.id } })}
-      />
-      <Button title="Delete school" variant="danger" onPress={confirmDelete} />
+      <View style={styles.danger}>
+        <Button
+          title="Delete school"
+          icon="trash-outline"
+          variant="ghostDanger"
+          onPress={confirmDelete}
+        />
+      </View>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  add: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, marginTop: spacing.sm },
+  danger: { marginTop: spacing.xl, alignItems: 'center' },
+});

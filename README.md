@@ -26,9 +26,14 @@ All data is stored locally in SQLite. There is no server and no account.
 
 ## Hidden feature switches
 
-Only clients and basic measurements are always on. Everything else can be turned on or off from
-a hidden screen: **Settings, then tap the "Version" line 7 times quickly**. Switches are saved on
-the phone, apply instantly, and never delete data (turning a feature off just hides it).
+Only clients and basic measurements are always on. Everything else is switched on from inside
+Settings:
+
+1. Open **Settings** and tap the **"Version"** line at the bottom **7 times quickly**.
+2. A switch labelled **Advanced** appears (and stays, even after restarting the app).
+3. Turn **Advanced** on to reveal the **Feature switches** list; turn it off to hide the list
+   again. Hiding the list never turns features off, and no data is ever deleted.
+
 Features are declared in `src/features/flags/features.ts`; to add one, add an entry there and wrap
 the UI with `useFlag('yourKey')`.
 
@@ -51,6 +56,18 @@ src/
 Design rules: screens never write SQL (they call repositories); pure logic lives in `domain/`
 and `utils/` and is unit tested; schema changes are append-only migrations in
 `src/db/migrations.ts`; money is integer minor units; dates are local `YYYY-MM-DD` strings.
+
+## Design and quality
+
+- One design system (`src/theme`, `src/components`): colour tokens that pass WCAG AA contrast
+  (enforced by a test), 48 px touch targets, icons, avatars, a floating add button, sticky Save
+  bars above the keyboard, and a custom app icon and splash screen.
+- Tests (`npm test`): pure logic, plus integration tests that run every repository, the
+  migrations (including upgrading a v1 database) and a full backup/restore round trip against a
+  real SQLite engine.
+- Audits used while building: type-check, lint, an Android bundle export, and a scripted browser
+  walk-through of every screen at two phone sizes that checks for horizontal overflow, small tap
+  targets, unnamed controls and console errors.
 
 ## Development
 

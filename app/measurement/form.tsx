@@ -1,17 +1,21 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Text } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import { DateField } from '../../src/components/DateField';
 import {
   Button,
   Chip,
-  ChipRow,
+  ChipScroller,
+  ErrorNote,
   Field,
+  IconButton,
+  LoadingView,
   Screen,
   SectionHeader,
   textStyles,
 } from '../../src/components/ui';
+import { spacing } from '../../src/theme';
 import {
   createMeasurement,
   deleteMeasurement,
@@ -171,22 +175,49 @@ export default function MeasurementFormScreen() {
       },
     ]);
 
-  if (!ready)
+  if (!ready) {
     return (
-      <Screen>
-        <Text style={textStyles.muted}>Loading…</Text>
+      <Screen scroll={false}>
+        <LoadingView />
       </Screen>
     );
+  }
+
+  const saveLabel = classId && !id ? 'Save & next student' : 'Save measurements';
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <>
+          {formError ? <ErrorNote message={formError} /> : null}
+          <Button
+            title={saveLabel}
+            icon={classId && !id ? 'arrow-forward' : 'checkmark'}
+            onPress={save}
+            loading={saving}
+          />
+        </>
+      }
+    >
       <Stack.Screen
-        options={{ title: studentName || (id ? 'Edit measurements' : 'New measurements') }}
+        options={{
+          title: studentName || (id ? 'Edit measurements' : 'New measurements'),
+          headerRight: id
+            ? () => (
+                <IconButton
+                  icon="trash-outline"
+                  label="Delete measurements"
+                  tone="plain"
+                  onPress={confirmDelete}
+                />
+              )
+            : undefined,
+        }}
       />
       {classId ? null : (
         <>
           <SectionHeader title="Garment" />
-          <ChipRow>
+          <ChipScroller>
             {GARMENTS.map((g) => (
               <Chip
                 key={g.key}
@@ -195,55 +226,62 @@ export default function MeasurementFormScreen() {
                 onPress={() => setGarment(g.key)}
               />
             ))}
-          </ChipRow>
+          </ChipScroller>
         </>
       )}
 
       <DateField label="Date taken" value={takenAt} onChange={setTakenAt} />
 
-      <SectionHeader title={`Measurements (${unit})`} />
+      <SectionHeader title={`Measurements in ${unit === 'cm' ? 'centimetres' : 'inches'}`} />
       {prefilled && !id ? (
-        <Text style={textStyles.muted}>
-          Pre-filled from the last time. Update what has changed.
-        </Text>
+        <Text style={textStyles.muted}>Pre-filled from last time. Update what has changed.</Text>
       ) : null}
       {fields.length === 0 ? (
         <Text style={textStyles.muted}>
           No measurements are switched on. Turn some on in Settings, Choose measurements.
         </Text>
       ) : null}
-      {fields.map((f) => (
-        <Field
-          key={f.key}
-          label={f.label}
-          value={inputs[f.key] ?? ''}
-          onChangeText={(t) => {
-            setInputs((prev) => ({ ...prev, [f.key]: t }));
-            setErrors((prev) => ({ ...prev, [f.key]: '' }));
-            setFormError(undefined);
-          }}
-          keyboardType="decimal-pad"
-          error={errors[f.key] || undefined}
-          placeholder={unit}
-        />
-      ))}
+      <View style={styles.grid}>
+        {fields.map((f) => (
+          <View key={f.key} style={styles.cell}>
+            <Field
+              label={f.label}
+              value={inputs[f.key] ?? ''}
+              onChangeText={(t) => {
+                setInputs((prev) => ({ ...prev, [f.key]: t }));
+                setErrors((prev) => ({ ...prev, [f.key]: '' }));
+                setFormError(undefined);
+              }}
+              keyboardType="decimal-pad"
+              error={errors[f.key] || undefined}
+              suffix={unit}
+              maxLength={6}
+            />
+          </View>
+        ))}
+      </View>
+
       {allowCustom ? (
-        <>
-          <Field
-            label="Add your own measurement"
-            value={customName}
-            onChangeText={setCustomName}
-            placeholder="e.g. Cap sleeve, Kaftan length"
-            onSubmitEditing={addCustom}
-          />
-          <Button
-            title="＋ Add measurement"
-            variant="secondary"
+        <View style={styles.customRow}>
+          <View style={{ flex: 1 }}>
+            <Field
+              label="Add your own measurement"
+              value={customName}
+              onChangeText={setCustomName}
+              placeholder="e.g. Cap sleeve"
+              onSubmitEditing={addCustom}
+              returnKeyType="done"
+            />
+          </View>
+          <IconButton
+            icon="add"
+            label="Add measurement"
             onPress={addCustom}
             disabled={!customName.trim()}
           />
-        </>
+        </View>
       ) : null}
+
       <Field
         label="Notes"
         value={notes}
@@ -251,13 +289,12 @@ export default function MeasurementFormScreen() {
         multiline
         placeholder="Posture, fit preferences…"
       />
-      {formError ? <Text style={{ color: '#B3261E' }}>{formError}</Text> : null}
-      <Button
-        title={classId && !id ? 'Save & next student' : 'Save'}
-        onPress={save}
-        loading={saving}
-      />
-      {id ? <Button title="Delete" variant="danger" onPress={confirmDelete} /> : null}
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.md, rowGap: spacing.md },
+  cell: { flexBasis: '47%', flexGrow: 1 },
+  customRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
+});

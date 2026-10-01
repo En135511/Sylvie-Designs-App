@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#8B3A62",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -20,16 +20,27 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "name": "Sylvie Designs",
+      "shortName": "Sylvie",
+      "themeColor": "#8B3A62",
+      "backgroundColor": "#F7F3F1"
     },
     "scheme": "sylviedesigns",
     "plugins": [
       "expo-router",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#F7F3F1"
+        }
+      ]
     ],
-    "platforms": [
-      "android",
-      "web"
-    ]
+    "platforms": ["android", "web"],
+    "backgroundColor": "#F7F3F1"
   }
 }

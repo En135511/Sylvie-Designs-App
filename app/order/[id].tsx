@@ -1,14 +1,18 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState } from 'react';
-import { Alert, Linking, Text } from 'react-native';
+import { Alert, Linking, StyleSheet, Text, View } from 'react-native';
 import { StatusBadge } from '../../src/components/StatusBadge';
 import {
   Button,
   Card,
   Chip,
-  ChipRow,
+  ChipScroller,
   EmptyState,
+  Icon,
+  IconButton,
+  ListRow,
+  LoadingView,
   Screen,
   SectionHeader,
   textStyles,
@@ -20,7 +24,7 @@ import { ORDER_STATUSES, STATUS_LABELS, type OrderStatus } from '../../src/domai
 import { useFlag } from '../../src/features/flags/FeatureFlagsProvider';
 import { useFocusQuery } from '../../src/hooks/useFocusQuery';
 import { useSettings } from '../../src/hooks/useSettings';
-import { colors } from '../../src/theme';
+import { colors, font, spacing } from '../../src/theme';
 import { describeDue, formatDate } from '../../src/utils/dates';
 import { formatMoney } from '../../src/utils/money';
 import { whatsappUrl } from '../../src/utils/phone';
@@ -41,18 +45,20 @@ export default function OrderDetailScreen() {
     [id, version],
   );
 
-  if (loading)
+  if (loading) {
     return (
-      <Screen>
-        <Text style={textStyles.muted}>Loading…</Text>
+      <Screen scroll={false}>
+        <LoadingView />
       </Screen>
     );
-  if (!data?.order)
+  }
+  if (!data?.order) {
     return (
       <Screen>
-        <EmptyState message="This order no longer exists." />
+        <EmptyState icon="shirt-outline" message="This order no longer exists." />
       </Screen>
     );
+  }
   const { order, client } = data;
   const balance = order.priceMinor - order.depositMinor;
 
@@ -90,65 +96,113 @@ export default function OrderDetailScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: garmentLabel(order.garment) }} />
+      <Stack.Screen
+        options={{
+          title: 'Order',
+          headerRight: () => (
+            <IconButton
+              icon="create-outline"
+              label="Edit order"
+              tone="plain"
+              onPress={() =>
+                router.push({
+                  pathname: '/order/form',
+                  params: { clientId: order.clientId, id: order.id },
+                })
+              }
+            />
+          ),
+        }}
+      />
       <Card>
-        <Text style={textStyles.title}>{garmentLabel(order.garment)}</Text>
-        <Text
-          style={textStyles.body}
-          onPress={() => router.push({ pathname: '/client/[id]', params: { id: order.clientId } })}
-        >
-          {order.clientName}
-        </Text>
-        <StatusBadge status={order.status} />
+        <View style={styles.top}>
+          <Text style={styles.garment}>{garmentLabel(order.garment)}</Text>
+          <StatusBadge status={order.status} />
+        </View>
         {order.description ? <Text style={textStyles.body}>{order.description}</Text> : null}
-        <Text style={textStyles.muted}>
-          {formatDate(order.dueDate)}
-          {order.status !== 'delivered' ? ` · ${describeDue(order.dueDate)}` : ''}
-        </Text>
+        <View style={styles.due}>
+          <Icon name="calendar-outline" size={18} color={colors.textMuted} />
+          <Text style={textStyles.muted}>
+            {formatDate(order.dueDate)}
+            {order.status !== 'delivered' ? ` · ${describeDue(order.dueDate)}` : ''}
+          </Text>
+        </View>
       </Card>
 
+      <ListRow
+        title={order.clientName}
+        subtitle="View client"
+        avatarName={order.clientName}
+        onPress={() => router.push({ pathname: '/client/[id]', params: { id: order.clientId } })}
+      />
+
       {showPayments ? (
-        <Card>
-          <Text style={textStyles.body}>
-            Price: {formatMoney(order.priceMinor, currencySymbol)}
-          </Text>
-          <Text style={textStyles.body}>
-            Deposit: {formatMoney(order.depositMinor, currencySymbol)}
-          </Text>
-          <Text
-            style={[textStyles.title, { color: balance > 0 ? colors.warning : colors.success }]}
-          >
-            {balance > 0 ? `Balance due: ${formatMoney(balance, currencySymbol)}` : 'Fully paid'}
-          </Text>
+        <Card style={{ gap: spacing.sm }}>
+          <View style={styles.line}>
+            <Text style={textStyles.body}>Price</Text>
+            <Text style={textStyles.body}>{formatMoney(order.priceMinor, currencySymbol)}</Text>
+          </View>
+          <View style={styles.line}>
+            <Text style={textStyles.body}>Deposit paid</Text>
+            <Text style={textStyles.body}>{formatMoney(order.depositMinor, currencySymbol)}</Text>
+          </View>
+          <View style={[styles.line, styles.balanceLine]}>
+            <Text style={styles.balanceLabel}>{balance > 0 ? 'Balance due' : 'Fully paid'}</Text>
+            {balance > 0 ? (
+              <Text style={[styles.balanceLabel, { color: colors.warning }]}>
+                {formatMoney(balance, currencySymbol)}
+              </Text>
+            ) : (
+              <Icon name="checkmark-circle" size={24} color={colors.success} />
+            )}
+          </View>
         </Card>
       ) : null}
 
       <SectionHeader title="Progress" />
-      <ChipRow>
-        {ORDER_STATUSES.map((s) => (
+      <ChipScroller>
+        {ORDER_STATUSES.map((st) => (
           <Chip
-            key={s}
-            label={STATUS_LABELS[s]}
-            selected={order.status === s}
-            onPress={() => changeStatus(s)}
+            key={st}
+            label={STATUS_LABELS[st]}
+            selected={order.status === st}
+            onPress={() => changeStatus(st)}
           />
         ))}
-      </ChipRow>
+      </ChipScroller>
 
       {showContact && order.status === 'ready' ? (
-        <Button title="Tell client it's ready (WhatsApp)" onPress={notifyReady} />
+        <Button title="Tell client it's ready" icon="logo-whatsapp" onPress={notifyReady} />
       ) : null}
-      <Button
-        title="Edit order"
-        variant="secondary"
-        onPress={() =>
-          router.push({
-            pathname: '/order/form',
-            params: { clientId: order.clientId, id: order.id },
-          })
-        }
-      />
-      <Button title="Delete order" variant="danger" onPress={confirmDelete} />
+
+      <View style={styles.danger}>
+        <Button
+          title="Delete order"
+          icon="trash-outline"
+          variant="ghostDanger"
+          onPress={confirmDelete}
+        />
+      </View>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  top: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  garment: { flex: 1, fontSize: font.heading, fontWeight: '800', color: colors.text },
+  due: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.xs },
+  line: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  balanceLine: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    paddingTop: spacing.md,
+    marginTop: spacing.xs,
+  },
+  balanceLabel: { fontSize: font.title, fontWeight: '700', color: colors.text },
+  danger: { marginTop: spacing.xl, alignItems: 'center' },
+});
