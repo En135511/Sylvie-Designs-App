@@ -19,6 +19,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
+        tabBarLabelPosition: 'below-icon',
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         // Explicit height so the 24 px icon and label are never clipped; the bottom inset keeps

@@ -125,44 +125,70 @@ function DatabaseGate({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * On the web preview, show the app as a centred phone-sized column instead of stretching it
+ * across a wide browser window. On Android this is a plain full-size container.
+ */
+function PhoneFrame({ children }: { children: ReactNode }) {
+  if (Platform.OS !== 'web') return <>{children}</>;
+  return (
+    <View style={{ flex: 1, alignItems: 'center', backgroundColor: '#E4DCD8' }}>
+      <View
+        style={{
+          flex: 1,
+          width: '100%',
+          maxWidth: 480,
+          backgroundColor: colors.background,
+          overflow: 'hidden',
+          boxShadow: '0px 0px 40px rgba(36, 29, 27, 0.18)',
+        }}
+      >
+        {children}
+      </View>
+    </View>
+  );
+}
+
 export default function RootLayout() {
   return (
-    <DatabaseGate>
-      <FeatureFlagsProvider>
-        <StatusBar style="dark" />
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: colors.background },
-            headerShadowVisible: false,
-            headerTintColor: colors.primary,
-            headerTitleStyle: { color: colors.text, fontWeight: '700', fontSize: 18 },
-            headerBackVisible: false,
-            // Custom back button: a full 48 px touch target on every platform.
-            headerLeft: ({ canGoBack }) =>
-              canGoBack ? (
-                <IconButton
-                  icon="chevron-back"
-                  label="Go back"
-                  tone="plain"
-                  onPress={() => router.back()}
-                />
-              ) : null,
-            contentStyle: { backgroundColor: colors.background },
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="client/[id]" options={{ title: 'Client' }} />
-          <Stack.Screen name="client/form" options={{ title: 'Client' }} />
-          <Stack.Screen name="measurement/form" options={{ title: 'Measurements' }} />
-          <Stack.Screen name="order/[id]" options={{ title: 'Order' }} />
-          <Stack.Screen name="order/form" options={{ title: 'Order' }} />
-          <Stack.Screen name="school/[id]" options={{ title: 'School' }} />
-          <Stack.Screen name="school/form" options={{ title: 'School' }} />
-          <Stack.Screen name="class/[id]" options={{ title: 'Class' }} />
-          <Stack.Screen name="class/add-students" options={{ title: 'Add students' }} />
-          <Stack.Screen name="measurements-setup" options={{ title: 'Choose measurements' }} />
-        </Stack>
-      </FeatureFlagsProvider>
-    </DatabaseGate>
+    <PhoneFrame>
+      <DatabaseGate>
+        <FeatureFlagsProvider>
+          <StatusBar style="dark" />
+          <Stack
+            screenOptions={{
+              headerStyle: { backgroundColor: colors.background },
+              headerShadowVisible: false,
+              headerTintColor: colors.primary,
+              headerTitleStyle: { color: colors.text, fontWeight: '700', fontSize: 18 },
+              headerBackVisible: false,
+              // Custom back button: a full 48 px touch target on every platform.
+              headerLeft: ({ canGoBack }) =>
+                canGoBack ? (
+                  <IconButton
+                    icon="chevron-back"
+                    label="Go back"
+                    tone="plain"
+                    onPress={() => router.back()}
+                  />
+                ) : null,
+              contentStyle: { backgroundColor: colors.background },
+            }}
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="client/[id]" options={{ title: 'Client' }} />
+            <Stack.Screen name="client/form" options={{ title: 'Client' }} />
+            <Stack.Screen name="measurement/form" options={{ title: 'Measurements' }} />
+            <Stack.Screen name="order/[id]" options={{ title: 'Order' }} />
+            <Stack.Screen name="order/form" options={{ title: 'Order' }} />
+            <Stack.Screen name="school/[id]" options={{ title: 'School' }} />
+            <Stack.Screen name="school/form" options={{ title: 'School' }} />
+            <Stack.Screen name="class/[id]" options={{ title: 'Class' }} />
+            <Stack.Screen name="class/add-students" options={{ title: 'Add students' }} />
+            <Stack.Screen name="measurements-setup" options={{ title: 'Choose measurements' }} />
+          </Stack>
+        </FeatureFlagsProvider>
+      </DatabaseGate>
+    </PhoneFrame>
   );
 }
