@@ -98,6 +98,10 @@ Alternatively, install Android Studio and run an emulator, then press `a` after 
 
 ## Building the APK for installation
 
+The repo's `.npmrc` sets `legacy-peer-deps=true`. Keep it: the cloud build runs `npm ci`, which
+must resolve packages the same way the lock file was created, or it fails with "package.json and
+package-lock.json are not in sync".
+
 Requires a free [Expo](https://expo.dev) account.
 
 ```bash
