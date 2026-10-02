@@ -40,7 +40,10 @@
         }
       ]
     ],
-    "platforms": ["android", "web"],
-    "backgroundColor": "#F7F3F1"
+    "platforms": ["android", "ios", "web"],
+    "backgroundColor": "#F7F3F1",
+    "ios": {
+      "supportsTablet": false
+    }
   }
 }

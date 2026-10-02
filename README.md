@@ -79,6 +79,19 @@ npm run lint
 npm test
 ```
 
+### Trying it on an iPhone (no Apple account needed)
+
+The real app is Android-only, but you can test it live on an iPhone with the free **Expo Go** app
+from the App Store:
+
+```bash
+npm start            # prints a QR code
+```
+
+Scan the QR code with the iPhone camera (phone and computer on the same Wi-Fi). If it can't
+connect, use `npx expo start --tunnel` instead. Data stays inside Expo Go, so it is separate from
+anything on the web preview.
+
 ### Previewing without an Android phone
 
 > Not seeing recent changes? Run `git pull`, then `npm install --legacy-peer-deps`, then
